@@ -1,279 +1,575 @@
-# ExpiryGuard Rx: Cloud-Based Batch-Level Inventory & Expiry-Loss Prevention System
+# ExpiryGuard Rx
 
-> **A Secure, Enterprise-Grade Pharmacy Inventory Management System featuring Batch-Level Tracking, Deterministic FEFO Dispensing, Multi-Cloud Polyglot Persistence, and Predictive Expiry Risk Analytics.**
+**Cloud-Based Batch-Level Pharmacy Inventory Management & Expiry-Loss Prevention System**
+
+ExpiryGuard Rx is a pharmacy inventory management system built with Python and FastAPI. It focuses on batch-level stock tracking, FEFO-based medicine dispensing, expiry risk monitoring, supplier management, transaction auditing, and machine-learning-based demand forecasting.
 
 ---
 
-## 1. System Overview & Architecture
+## 1. Project Overview
 
-Independent retail pharmacies face severe financial write-offs and patient safety risks when inventory expires on shelves. **ExpiryGuard Rx** eliminates these losses by enforcing **FEFO (First Expiry, First Out)** stock dispensing at the database engine level, tracking inventory by individual batch lot, and predicting unsold expiry risk through time-series machine learning.
+Independent pharmacies face financial losses and patient safety risks due to medicines expiring before they are sold.
 
-### Multi-Cloud & Polyglot Storage Architecture (DP-900 Model)
-- **Structured Relational Storage (Azure SQL Database)**: 13 normalized tables (3NF), foreign keys, check constraints, pessimistic row locks (`UPDLOCK, ROWLOCK`), stored procedures (`dbo.usp_create_sale`, `dbo.usp_approve_return`), and audit triggers.
-- **Semi-Structured Document Store (Azure Cosmos DB)**: Flexible JSON supplier invoice documents (partitioned by `/supplier_id`) and nightly ML forecast run summaries.
-- **Unstructured Object Storage (Azure Blob Storage)**: Private cloud container (`invoices`) housing scanned vendor delivery documents accessible exclusively via short-lived 5-minute SAS temporary links.
-- **Business Intelligence (Power BI Desktop)**: 4-page executive dashboard reading curated SQL analytical views (Import Mode) tracking 9 core operational KPIs.
+**ExpiryGuard Rx** aims to address these challenges through automated inventory management, batch-level tracking, expiry monitoring, and predictive analytics.
 
+### Key Features
+
+- **Batch-Level Inventory Management:** Tracks individual medicine batches, quantities, costs, and expiry dates.
+- **FEFO Dispensing:** First Expiry, First Out logic prioritizes batches with the earliest expiry dates.
+- **Expiry Risk Detection:** Categorizes inventory into EXPIRED, RED, AMBER, and GREEN risk bands.
+- **Medicine Management:** Supports medicine catalog management, search, and stock monitoring.
+- **Goods Received Notes (GRN):** Records incoming stock and supplier invoice information.
+- **Supplier Management:** Maintains supplier information and supports return workflows.
+- **Point of Sale (POS):** Supports medicine dispensing and customer billing.
+- **Prescription Register:** Maintains prescription-related records for applicable medicines.
+- **Audit Logging:** Records important inventory and operational activities.
+- **Demand Forecasting:** Uses time-series forecasting to estimate medicine demand and identify potential expiry risks.
+- **Role-Based Access Control (RBAC):** Provides different permissions for different staff roles.
+- **Cloud Integration:** Supports Azure SQL Database, Azure Cosmos DB, and Azure Blob Storage.
+- **Business Intelligence:** Supports operational reporting and Power BI dashboards.
+
+---
+
+## 2. Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Backend | Python, FastAPI |
+| Frontend | HTML, CSS, JavaScript, Jinja2 |
+| Database | Azure SQL Database / Local Database |
+| Cloud Document Storage | Azure Cosmos DB |
+| Object Storage | Azure Blob Storage |
+| Machine Learning | Python, Exponential Smoothing |
+| Data Processing | SQL, Python |
+| Authentication | JWT, bcrypt |
+| Testing | Pytest |
+| Business Intelligence | Microsoft Power BI |
+| Deployment | Azure App Service |
+| Version Control | Git, GitHub |
+
+---
+
+## 3. System Architecture
+
+ExpiryGuard Rx follows a layered backend architecture with multiple storage services.
+
+```text
+                  CLIENT BROWSER
+                        |
+                      HTTPS
+                        |
+                        v
+               FASTAPI APPLICATION
+                        |
+          +-------------+-------------+
+          |             |             |
+          v             v             v
+      AZURE SQL     AZURE COSMOS   AZURE BLOB
+      DATABASE         DB           STORAGE
+          |             |             |
+          |             |             |
+       Relational     JSON         Invoice
+        Records     Documents       Files
+          |
+          v
+    BUSINESS REPORTS
+          |
+          v
+      POWER BI
+
+          |
+          v
+   MACHINE LEARNING
+   DEMAND FORECASTING
+   EXPIRY RISK ANALYSIS
 ```
- [ Client Browser ] <--- HTTPS ---> [ FastAPI Application (Linux App Service) ]
-                                              |
-      +---------------------------------------+---------------------------------------+
-      |                                       |                                       |
-      v                                       v                                       v
-[ Azure SQL Database ]             [ Azure Cosmos DB ]                     [ Azure Blob Storage ]
-- 13 Tables, Indexes, Views        - Supplier Invoice JSON                 - Scanned Invoices (Private)
-- Stored Procedures (FEFO)         - Forecast Run Summaries                - 5-Minute SAS Links
-- Triggers, Audit Log              (Partition: /supplier_id)
-      ^
-      | (Import Mode)
-[ Power BI Desktop ] (9 Core KPIs)
-```
+
+### Storage Architecture
+
+**1. Azure SQL Database**
+- Relational database management.
+- Normalized database schema.
+- Primary and foreign key constraints.
+- FEFO inventory operations.
+- Stored procedures and database triggers.
+- Transaction management and audit logging.
+
+**2. Azure Cosmos DB**
+- Semi-structured JSON document storage.
+- Supplier invoice document management.
+- Forecast execution summaries.
+- Partitioning using `/supplier_id`.
+
+**3. Azure Blob Storage**
+- Scanned supplier invoices.
+- Private document storage.
+- Temporary SAS access links.
+
+**4. Power BI**
+- Operational reporting.
+- Inventory analysis.
+- Expiry monitoring.
+- Business performance indicators.
 
 ---
 
-## 2. Default Demo User Accounts & Roles
+## 4. User Roles and Permissions
 
-ExpiryGuard Rx enforces server-side Role-Based Access Control (RBAC) across 5 distinct job roles:
+ExpiryGuard Rx implements Role-Based Access Control (RBAC) with five different user roles.
 
-| Username | Role | Role ID | Default Password | Primary Permissions & Responsibilities |
-|---|---|:---:|---|---|
-| `admin` | **Admin** | 1 | `Admin@123456` | Full system access: User admin, price edits, master catalogs, audits. |
-| `pharmacist1` | **Pharmacist** | 2 | `Pharmacist@123456` | Stock receiving (GRN), invoice scans, return approvals, Rx verify. |
-| `counter1` | **Counter** | 3 | `Counter@123456` | Point-of-sale cashier: FEFO dispensing, customer billing. |
-| `purchase1` | **Purchase** | 4 | `Purchase@123456` | Supplier master, stock reorder planning, raise returns, credit notes. |
-| `auditor1` | **Auditor** | 5 | `Auditor@123456` | Read-only compliance inspection: Audit logs, reconciliation ledger. |
+| Role | Role ID | Responsibilities |
+|---|---:|---|
+| Admin | 1 | User administration, master data, pricing, and system management |
+| Pharmacist | 2 | Stock receiving, invoice scanning, prescription verification, and return approvals |
+| Counter | 3 | Customer billing and medicine dispensing |
+| Purchase | 4 | Supplier management, reorder planning, and supplier returns |
+| Auditor | 5 | Read-only access to audit logs and reconciliation reports |
+
+**Demo credentials:** Refer to the project's seed configuration for the locally generated demo accounts. Never publish production passwords or real credentials in this repository.
 
 ---
 
-## 3. Quickstart: Local Setup in Under 10 Steps
+## 5. Installation and Local Setup
 
-Follow these exact steps to set up and run ExpiryGuard Rx locally:
+Follow these steps to run ExpiryGuard Rx locally.
 
-### Step 1: Clone or Open the Repository
+### Prerequisites
+
+Install the following:
+
+- Python 3.11 or 3.12
+- Visual Studio Code
+- Git
+- pip
+- PowerShell or Command Prompt
+
+### Step 1: Clone the Repository
+
 ```bash
-cd "e:\RX Medical center"
+git clone https://github.com/VISHALsince2025/ExpiryGuard-Rx-.git
 ```
 
-### Step 2: Create a Virtual Environment (Python 3.11 or 3.12)
+Navigate into the project:
+
+```bash
+cd ExpiryGuard-Rx-
+```
+
+### Step 2: Create a Virtual Environment
+
 ```bash
 python -m venv .venv
 ```
 
 ### Step 3: Activate the Virtual Environment
-- **Windows (PowerShell)**:
-  ```powershell
-  .\.venv\Scripts\Activate.ps1
-  ```
-- **Linux / macOS**:
-  ```bash
-  source .venv/bin/activate
-  ```
+
+**Windows PowerShell:**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks script execution, you can activate it using Command Prompt:
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+**Linux / macOS:**
+
+```bash
+source .venv/bin/activate
+```
 
 ### Step 4: Install Dependencies
+
+```bash
+python -m pip install --upgrade pip
+```
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Step 5: Configure Environment Variables
-Copy `.env.example` to `.env` (or configure Azure connection strings):
-```bash
-cp .env.example .env
-```
-*(A default random JWT secret is auto-generated. If Azure SQL connection string is omitted, the system seamlessly uses local database storage).*
 
-### Step 6: Initialize Schema & Seed Demo Data
-Populates the 5 roles, demo accounts, categories, 40 medicines, 6 suppliers, 120 batches, and 90 days of sales history:
+Create your local `.env` file using the example configuration:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Configure the required environment variables in `.env`.
+
+**Important:** Never commit your `.env` file, database passwords, JWT secrets, or cloud access keys to GitHub.
+
+### Step 6: Initialize the Database and Seed Data
+
+Run the seed script:
+
 ```bash
 python ml/seed.py
 ```
-*(Runs Query Q12 reconciliation check and asserts 0 discrepancies).*
 
-### Step 7: Execute Nightly Demand Forecast Job
-Trains exponential smoothing demand forecasting model and calculates batch-level expiry risks:
+The documented seed configuration includes sample roles, medicines, suppliers, batches, and historical sales data.
+
+### Step 7: Run the Demand Forecasting Job
+
 ```bash
 python ml/forecast_job.py
 ```
 
-### Step 8: Run Automated Test Suite
-Executes all 19 unit, security, RBAC, FEFO concurrency, and performance benchmark tests:
+This job performs demand forecasting and batch-level expiry risk calculations.
+
+### Step 8: Run Automated Tests
+
 ```bash
 pytest -v
 ```
 
-### Step 9: Launch the Application Server
+### Step 9: Start the FastAPI Application
+
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Step 10: Access the Dispensing Console
-Open your web browser at:
-```
+### Step 10: Open the Application
+
+Visit:
+
+```text
 http://localhost:8000
 ```
-Sign in with `counter1` or `admin` using the credentials in the table above.
+
+Log in using the locally configured demo account.
 
 ---
 
-## 4. Repository Structure
+## 6. Repository Structure
 
-```
-expiryguard-rx/
+```text
+ExpiryGuard-Rx/
+│
 ├── app/
-│   ├── main.py               # Application factory, security middleware, CSP, router mounting
-│   ├── config.py             # Environment configuration (zero hardcoded secrets)
-│   ├── db.py                 # Multi-engine connection manager (Azure SQL pyodbc & local storage)
-│   ├── security.py           # Salted bcrypt cost 12, JWT encode/decode, magic-byte file validation
-│   ├── deps.py               # Dependency injection: current_user, require_roles
-│   ├── audit.py              # Central audit logging function
+│   ├── main.py
+│   ├── config.py
+│   ├── db.py
+│   ├── security.py
+│   ├── deps.py
+│   ├── audit.py
+│   │
 │   ├── routers/
-│   │   ├── auth.py           # Login, logout, current user, rate limiting, lockout
-│   │   ├── users.py          # User management & account unlocking (Admin)
-│   │   ├── medicines.py      # Drug master catalog CRUD, category list, indexed search
-│   │   ├── suppliers.py      # Wholesaler directory CRUD
-│   │   ├── grn.py            # Goods Received Notes receiving & invoice scan upload
-│   │   ├── sales.py          # FEFO point-of-sale checkout, bill view, Rx register
-│   │   ├── returns.py        # Supplier returns, approval procedures, credit notes
-│   │   ├── alerts.py         # Expiry bands (EXPIRED, RED, AMBER, GREEN) & batch risk
-│   │   ├── reports.py        # 9 Core KPIs and decision-support metrics
-│   │   ├── audit_view.py     # Immutable audit log search
-│   │   └── pages.py          # Jinja2 HTML page routers
+│   │   ├── auth.py
+│   │   ├── users.py
+│   │   ├── medicines.py
+│   │   ├── suppliers.py
+│   │   ├── grn.py
+│   │   ├── sales.py
+│   │   ├── returns.py
+│   │   ├── alerts.py
+│   │   ├── reports.py
+│   │   ├── audit_view.py
+│   │   └── pages.py
+│   │
 │   ├── services/
-│   │   ├── blob.py           # Azure Blob Storage client & 5-minute SAS temporary links
-│   │   ├── cosmos.py         # Azure Cosmos DB document store (partition /supplier_id)
-│   │   └── forecast.py       # Exponential smoothing, naive baseline, MAE, batch risk
-│   ├── templates/            # Jinja2 templates (auto-escaped, CSP compliant)
-│   │   ├── base.html, login.html, dashboard.html, medicines.html, grn.html,
-│   │   ├── billing.html, alerts.html, returns.html, audit.html, users.html, reports.html
-│   └── static/               # External CSS & JavaScript (zero inline scripts)
-│       ├── style.css, app.js, billing.js, grn.js, medicines.js, alerts.js, returns.js, audit.js, users.js, reports.js
+│   │   ├── blob.py
+│   │   ├── cosmos.py
+│   │   └── forecast.py
+│   │
+│   ├── templates/
+│   └── static/
+│
 ├── sql/
-│   ├── 00_drop.sql           # Re-runnable teardown script (reverse dependency order)
-│   ├── 01_schema.sql         # 13 tables, PKs, FKs, CHECK constraints, UNIQUE constraints
-│   ├── 02_indexes.sql        # FEFO indexes, search indexes, and date report indexes
-│   ├── 03_logic.sql          # IST function, 6 views, audit trigger, 2 stored procedures
-│   ├── 04_notes.md           # 3NF proof, controlled denormalization defense, locking details
-│   ├── 05_queries.sql        # Business queries Q1 through Q12 (reconciliation suite)
-│   └── 06_permissions.sql    # Least-privilege application user (`eg_app`) configuration
+│   ├── 00_drop.sql
+│   ├── 01_schema.sql
+│   ├── 02_indexes.sql
+│   ├── 03_logic.sql
+│   ├── 04_notes.md
+│   ├── 05_queries.sql
+│   └── 06_permissions.sql
+│
 ├── ml/
-│   ├── generate_data.py      # Synthetic time-series demand generation with Poisson noise
-│   ├── seed.py               # Master seed script (40 drugs, 120 lots, Q12 verification)
-│   └── forecast_job.py       # Scheduled batch forecasting job & Cosmos run document
+│   ├── generate_data.py
+│   ├── seed.py
+│   └── forecast_job.py
+│
 ├── tests/
-│   ├── test_auth.py          # Login, bad passwords, 5-attempt lockout, tokens
-│   ├── test_rbac.py          # RBAC enforcement across all 5 roles
-│   ├── test_security.py      # SQL injection tautologies, negative quantities, security headers
-│   ├── test_sale.py          # FEFO earliest batch selection, multi-batch split, atomic rollback, race locking
-│   ├── test_grn_returns.py   # Duplicate batch constraint, supplier return approval workflow
-│   ├── test_performance.py   # NFR1 benchmark: 50 multi-line sales latency (<2.0s p95)
-│   ├── test_auditability.py  # NFR5: 100% of stock-changing operations create audit rows
-│   └── test_forecast.py      # Worked test from page 40 of PDF
-├── docs/                     # Comprehensive architecture, security, and viva documentation
-│   ├── 00_project_note.md, requirements.md, architecture.md, 3nf.md, threat_model.md,
-│   ├── security_checklist.md, rbac_matrix.md, power_bi_guide.md, demo_script.md
-├── pytest.ini                # Pytest configuration with pythonpath and asyncio mode
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment variables template
-├── .gitignore                # Git ignore rules protecting secrets and local files
-└── README.md                 # Complete system guide
+│   ├── test_auth.py
+│   ├── test_rbac.py
+│   ├── test_security.py
+│   ├── test_sale.py
+│   ├── test_grn_returns.py
+│   ├── test_performance.py
+│   ├── test_auditability.py
+│   └── test_forecast.py
+│
+├── docs/
+│
+├── requirements.txt
+├── pytest.ini
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 5. Database Schema & Logic
+## 7. Database Design
 
-### 13 Normalized Tables
-1. `roles`: Master system roles (Admin, Pharmacist, Counter, Purchase, Auditor).
-2. `users`: Staff credentials, salted bcrypt hashes, active flags, and lockout timers.
-3. `categories`: Therapeutic drug classifications.
-4. `medicines`: Brand name, generic formulation, strength, dosage form, reorder levels, prescription flags.
-5. `suppliers`: Wholesaler distribution agencies.
-6. `grn`: Goods Received Notes delivery headers with invoice links.
-7. `batches`: Batch lots with expiry dates, received quantities, live balance (`qty_on_hand`), cost, and selling price.
-8. `sales`: Point-of-sale customer receipts.
-9. `sale_items`: Individual batch items dispensed per sale invoice (historical unit price snapshot).
-10. `prescription_register`: Statutory register capturing patient and doctor details for Schedule H/X drugs.
-11. `supplier_returns`: Returns raised for near-expiry or damaged lots.
-12. `audit_log`: Immutable, append-only security ledger.
-13. `demand_forecasts`: Daily machine learning predictions per medicine.
+The documented database architecture contains 13 normalized tables.
 
-### Key Logic & Stored Procedures
-- `dbo.fn_today()`: Computes standardized India Standard Time (IST) date for shelf-life calculations.
-- `dbo.v_expiry_status`: Categorizes stock into `EXPIRED`, `RED` ($\le$30d), `AMBER` ($\le$90d), and `GREEN`.
-- `dbo.trg_batches_audit`: Database trigger automatically writing prior and updated values to `dbo.audit_log`.
-- `dbo.usp_create_sale`: FEFO dispensing routine utilizing pessimistic row locks (`UPDLOCK, ROWLOCK`), atomic stock deduction, and automatic rollback on shortage.
-- `dbo.usp_approve_return`: Pharmacist approval procedure transactionally deducting batch stock upon return validation.
-- **Reconciliation Query Q12**: Proves mathematical equivalence $\text{qty\_on\_hand} = \text{qty\_received} - \text{sold} - \text{returned}$. Returns **0 rows**.
+| No. | Table | Purpose |
+|---:|---|---|
+| 1 | `roles` | System roles |
+| 2 | `users` | Staff accounts and authentication |
+| 3 | `categories` | Medicine categories |
+| 4 | `medicines` | Medicine master catalog |
+| 5 | `suppliers` | Supplier information |
+| 6 | `grn` | Goods Received Notes |
+| 7 | `batches` | Batch-level stock and expiry tracking |
+| 8 | `sales` | Customer sales records |
+| 9 | `sale_items` | Individual sale line items |
+| 10 | `prescription_register` | Prescription-related records |
+| 11 | `supplier_returns` | Supplier return records |
+| 12 | `audit_log` | Operational audit records |
+| 13 | `demand_forecasts` | Medicine demand predictions |
+
+### Important Database Concepts
+
+- Database normalization (3NF).
+- Primary and foreign keys.
+- CHECK and UNIQUE constraints.
+- Database indexes.
+- Transactions and concurrency control.
+- Stored procedures.
+- Database triggers.
+- Audit logging.
+- Inventory reconciliation.
+
+### FEFO Logic
+
+FEFO stands for **First Expiry, First Out**.
+
+The system prioritizes medicine batches with the earliest expiry dates when dispensing stock.
+
+Example:
+
+| Batch | Expiry Date | Quantity |
+|---|---|---:|
+| B001 | January 2027 | 50 |
+| B002 | March 2027 | 100 |
+| B003 | June 2027 | 75 |
+
+The system should prioritize B001 before B002 and B003, subject to stock availability and applicable dispensing rules.
+
+### Inventory Reconciliation
+
+The documented reconciliation logic checks the relationship:
+
+```text
+Closing Stock = Received Quantity - Sold Quantity - Returned Quantity
+```
+
+This helps identify inventory discrepancies.
 
 ---
 
-## 6. Functional & Non-Functional Compliance Matrix
+## 8. Machine Learning and Predictive Analytics
 
-| Requirement | Description | Implemented? | Component / File | Verification Test | Result |
-|---|---|:---:|---|---|:---:|
-| **FR1** | Authentication & Lockout | **YES** | `app/routers/auth.py` | `test_auth_login_success`, `test_auth_lockout_after_failures` | **PASSED** |
-| **FR2** | Medicine Master CRUD | **YES** | `app/routers/medicines.py` | `test_admin_can_access_users`, API tests | **PASSED** |
-| **FR3** | Multi-Batch GRN Receiving | **YES** | `app/routers/grn.py` | `test_grn_duplicate_batch_fails` | **PASSED** |
-| **FR4** | Transactional FEFO Dispensing | **YES** | `app/routers/sales.py`, `sql/03_logic.sql` | `test_fefo_earliest_batch_allocated`, `test_insufficient_stock_fails_atomically` | **PASSED** |
-| **FR5** | Expiry Bands & Value at Stake | **YES** | `app/routers/alerts.py`, `dbo.v_expiry_status` | UI & API test | **PASSED** |
-| **FR6** | Multi-Step Supplier Returns | **YES** | `app/routers/returns.py`, `sql/03_logic.sql` | `test_supplier_return_workflow` | **PASSED** |
-| **FR7** | Prescription Drug Register | **YES** | `app/routers/sales.py`, `prescription_register` | Billing workflow integration test | **PASSED** |
-| **FR8** | Comprehensive Audit Logging | **YES** | `app/audit.py`, `sql/03_logic.sql` | `test_nfr5_100_percent_stock_changing_operations_audited` | **PASSED** |
-| **FR9** | Time-Series Demand Forecasting | **YES** | `ml/forecast_job.py`, `app/services/forecast.py` | `test_batch_risk_worked_example_from_pdf` | **PASSED** |
-| **FR10** | Executive BI Dashboard | **YES** | `app/routers/reports.py`, `docs/power_bi_guide.md` | `GET /reports/kpis` verification | **PASSED** |
-| **NFR1** | Sale Latency < 2.0s (P95) | **YES** | `app/routers/sales.py` | `test_nfr1_sale_performance_50_sales_under_2_seconds` | **PASSED (97ms)** |
-| **NFR2** | Stock Integrity (No Negatives) | **YES** | `sql/01_schema.sql` (CHECK constraints) | Stored procedures & failing test inserts | **PASSED** |
-| **NFR3** | Concurrency Race Prevention | **YES** | `sql/03_logic.sql` (`UPDLOCK, ROWLOCK`) | `test_concurrent_sales_competing_for_last_unit` | **PASSED** |
-| **NFR4** | Cloud Security Hardening | **YES** | `app/security.py`, `app/main.py` | `test_security_headers_present`, `test_sql_injection_login_rejected` | **PASSED** |
-| **NFR5** | 100% Stock Change Auditing | **YES** | `sql/03_logic.sql`, `app/audit.py` | `test_nfr5_100_percent_stock_changing_operations_audited` | **PASSED** |
-| **NFR6** | Public Health Probe | **YES** | `app/main.py` (`GET /health`) | `test_security_headers_present` | **PASSED** |
-| **NFR7** | Counter Usability < 60s | **YES** | `app/static/billing.js` | Fast auto-search and batch auto-allocation | **PASSED** |
-| **NFR8** | Maintainability & Reproducibility | **YES** | Numbered scripts `00`–`06`, README | Clean 10-step reproduction | **PASSED** |
+ExpiryGuard Rx includes a demand forecasting module.
+
+### Key Capabilities
+
+- Historical sales analysis.
+- Time-series demand forecasting.
+- Exponential smoothing.
+- Naive forecasting baseline.
+- Mean Absolute Error (MAE) evaluation.
+- Batch-level expiry risk calculations.
+- Identification of potential unsold inventory.
+
+### Forecasting Workflow
+
+```text
+Historical Sales Data
+        |
+        v
+Data Preparation
+        |
+        v
+Demand Forecasting
+        |
+        v
+Forecast Evaluation
+        |
+        v
+Batch-Level Risk Analysis
+        |
+        v
+Expiry Risk Insights
+```
+
+The goal is to help pharmacies make better purchasing, stocking, and inventory management decisions.
 
 ---
 
-## 7. Azure Cloud Deployment Guide
+## 9. Functional and Non-Functional Requirements
 
-### 1. Azure SQL Database (Serverless Free Offer)
+### Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| FR1 | Authentication and account lockout |
+| FR2 | Medicine master management |
+| FR3 | Multi-batch stock receiving |
+| FR4 | FEFO-based dispensing |
+| FR5 | Expiry alerts and inventory risk |
+| FR6 | Supplier return management |
+| FR7 | Prescription register |
+| FR8 | Audit logging |
+| FR9 | Time-series demand forecasting |
+| FR10 | Business intelligence reporting |
+
+### Non-Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| NFR1 | Sales transaction performance |
+| NFR2 | Inventory integrity |
+| NFR3 | Concurrency control |
+| NFR4 | Application security |
+| NFR5 | Stock-change auditability |
+| NFR6 | Application health monitoring |
+| NFR7 | Counter usability |
+| NFR8 | Maintainability and reproducibility |
+
+Refer to the `tests/` and `docs/` directories for implementation details and verification procedures. Performance and compliance results should be considered verified only when reproduced in the target environment.
+
+---
+
+## 10. Azure Cloud Deployment
+
+The architecture is designed to support the following Azure services:
+
+1. Azure SQL Database – Relational database.
+2. Azure Blob Storage – Scanned invoice storage.
+3. Azure Cosmos DB for NoSQL – Document storage.
+4. Azure App Service – FastAPI application hosting.
+5. Microsoft Power BI – Business intelligence and reporting.
+
+### Azure Prerequisites
+
+- Azure subscription.
+- Azure CLI.
+- Appropriate resource permissions.
+- Configured database and storage credentials.
+- Application environment variables.
+
+### Deployment Preparation
+
+Authenticate with Azure:
+
+```bash
+az login
+```
+
+Select the appropriate subscription:
+
+```bash
+az account show
+```
+
+Create a resource group:
+
 ```bash
 az group create --name rg-expiryguard --location centralindia
-az sql server create --name sql-expiryguard-vishal --resource-group rg-expiryguard --location centralindia --admin-user sqladmin --admin-password "YourStrongPassword#2026"
-az sql db create --resource-group rg-expiryguard --server sql-expiryguard-vishal --name expiryguard --service-objective Free --compute-model Serverless
-```
-Execute SQL scripts `00_drop.sql` through `06_permissions.sql` via Azure Data Studio or SSMS.
-
-### 2. Azure Blob Storage (Private Container)
-```bash
-az storage account create --name stexpiryguard01 --resource-group rg-expiryguard --location centralindia --sku Standard_LRS --allow-blob-public-access false
-az storage container create --account-name stexpiryguard01 --name invoices --public-access off
 ```
 
-### 3. Azure Cosmos DB for NoSQL (Free Tier)
-```bash
-az cosmosdb create --name cosmos-expiryguard --resource-group rg-expiryguard --locations regionName=centralindia failoverPriority=0 --enable-free-tier true
-az cosmosdb sql database create --account-name cosmos-expiryguard --resource-group rg-expiryguard --name expiryguard
-az cosmosdb sql container create --account-name cosmos-expiryguard --resource-group rg-expiryguard --database-name expiryguard --name invoices --partition-key-path "/supplier_id"
-```
+Further deployment commands and configuration details should be maintained in the project documentation.
 
-### 4. Deploy FastAPI Application to Azure App Service (Linux F1 Free)
-```bash
-az webapp up --name expiryguard-vishal --resource-group rg-expiryguard --location centralindia --runtime "PYTHON:3.12" --sku F1
-az webapp config set -g rg-expiryguard -n expiryguard-vishal --startup-file "gunicorn -w 1 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000 --forwarded-allow-ips=*"
-az webapp update -g rg-expiryguard -n expiryguard-vishal --https-only true
-az webapp config set -g rg-expiryguard -n expiryguard-vishal --min-tls-version 1.2 --ftps-state Disabled
-```
-Configure application settings in Azure App Service:
-```bash
-az webapp config appsettings set -g rg-expiryguard -n expiryguard-vishal --settings \
-  ENV=prod \
-  JWT_SECRET="<your-generated-jwt-secret>" \
-  AZURE_SQL_CONNECTIONSTRING="<your-azure-sql-connection-string>" \
-  BLOB_CONNECTION_STRING="<your-blob-connection-string>" \
-  BLOB_CONTAINER=invoices \
-  COSMOS_ENDPOINT="<your-cosmos-endpoint>" \
-  COSMOS_KEY="<your-cosmos-key>"
-```
+**Note:** Azure service availability, pricing, free-tier eligibility, quotas, and deployment options can change. Verify current Azure documentation before deploying resources.
 
-### 5. Whitelist App Service Outbound IPs in Azure SQL Firewall
-```bash
-az sql server firewall-rule create -g rg-expiryguard -s sql-expiryguard-vishal -n app-ip-1 --start-ip-address <outbound-ip> --end-ip-address <outbound-ip>
-```
+---
+
+## 11. Security Considerations
+
+Security is an important part of pharmacy inventory management.
+
+The project documentation describes the following security mechanisms:
+
+- Password hashing using bcrypt.
+- JWT-based authentication.
+- Role-Based Access Control.
+- SQL injection protection.
+- Login attempt restrictions.
+- Secure environment configuration.
+- Private invoice storage.
+- Temporary SAS access links.
+- Security headers.
+- Inventory operation audit logging.
+
+### Security Best Practices
+
+- Never upload `.env` files.
+- Never expose database credentials.
+- Never publish production passwords.
+- Use strong JWT secrets.
+- Apply least-privilege access.
+- Validate uploaded files.
+- Use HTTPS in production.
+- Rotate compromised credentials immediately.
+
+---
+
+## 12. Future Enhancements
+
+Potential future improvements include:
+
+- Advanced machine learning forecasting models.
+- More accurate expiry-loss prediction.
+- Automated supplier reorder recommendations.
+- OCR-based invoice data extraction.
+- Barcode and QR code scanning.
+- Mobile application integration.
+- Multi-branch pharmacy support.
+- Real-time inventory synchronization.
+- Advanced analytics and reporting.
+- Automated notifications for critical expiry alerts.
+
+---
+
+## 13. Project Objectives
+
+The main objectives of ExpiryGuard Rx are:
+
+1. Reduce medicine expiry-related inventory losses.
+2. Improve pharmacy stock visibility.
+3. Enforce systematic FEFO dispensing.
+4. Improve inventory accuracy.
+5. Strengthen operational accountability.
+6. Support data-driven purchasing decisions.
+7. Apply machine learning to pharmacy inventory management.
+8. Explore cloud-based enterprise application architecture.
+
+---
+
+## 14. Author
+
+**Developed by: Vishal**
+
+B.Tech – Computer Science and Engineering  
+Specialization: Artificial Intelligence and Machine Learning
+
+GitHub: [@VISHALsince2025](https://github.com/VISHALsince2025)
+
+Project Repository: [ExpiryGuard Rx](https://github.com/VISHALsince2025/ExpiryGuard-Rx-)
+
+---
+
+## 15. License
+
+No license has been specified yet. All rights are reserved by the project owner unless a license is added to this repository.
+
+---
+
+**ExpiryGuard Rx – Smarter Inventory. Safer Dispensing. Reduced Expiry Losses.**
