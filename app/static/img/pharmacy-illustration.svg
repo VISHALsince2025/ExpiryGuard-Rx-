@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.02" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="pillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="bottleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="warningGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <filter id="shadow1" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.1" />
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop Circles -->
+  <circle cx="250" cy="190" r="160" fill="url(#bgGrad)" />
+  <circle cx="400" cy="80" r="60" fill="#e0f2fe" opacity="0.6" />
+  <circle cx="90" cy="290" r="75" fill="#f0fdf4" opacity="0.7" />
+
+  <!-- Pharmacy Shelf Background Card -->
+  <rect x="70" y="50" width="360" height="260" rx="20" fill="#ffffff" filter="url(#shadow1)" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Shelf Rack Lines -->
+  <line x1="70" y1="130" x2="430" y2="130" stroke="#f1f5f9" stroke-width="3" stroke-linecap="round"/>
+  <line x1="70" y1="210" x2="430" y2="210" stroke="#f1f5f9" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Medical Cross Decor Top Right -->
+  <g transform="translate(370, 70)">
+    <circle cx="15" cy="15" r="18" fill="#dcfce7"/>
+    <path d="M15 6 v18 M6 15 h18" stroke="#16a34a" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Top Shelf: Medicine Box 1 (FEFO Green) -->
+  <g transform="translate(100, 75)">
+    <rect x="0" y="0" width="55" height="42" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <rect x="0" y="0" width="55" height="12" rx="5" fill="#10b981"/>
+    <text x="7" y="27" font-family="sans-serif" font-size="8" font-weight="bold" fill="#0f172a">PARACET</text>
+    <text x="7" y="36" font-family="sans-serif" font-size="6" fill="#64748b">LOT: 2027</text>
+  </g>
+
+  <!-- Top Shelf: Syrup Bottle (Blue) -->
+  <g transform="translate(180, 68)">
+    <rect x="10" y="0" width="12" height="8" rx="2" fill="#94a3b8"/>
+    <rect x="0" y="8" width="32" height="49" rx="8" fill="url(#bottleGrad)"/>
+    <!-- Label -->
+    <rect x="4" y="20" width="24" height="24" rx="3" fill="#ffffff" opacity="0.95"/>
+    <line x1="8" y1="28" x2="24" y2="28" stroke="#0284c7" stroke-width="2"/>
+    <line x1="8" y1="34" x2="18" y2="34" stroke="#94a3b8" stroke-width="1.5"/>
+  </g>
+
+  <!-- Top Shelf: Medicine Box 2 (Amber Near Expiry) -->
+  <g transform="translate(240, 75)">
+    <rect x="0" y="0" width="55" height="42" rx="6" fill="#f8fafc" stroke="#fde68a" stroke-width="1.5"/>
+    <rect x="0" y="0" width="55" height="12" rx="5" fill="url(#warningGrad)"/>
+    <text x="7" y="27" font-family="sans-serif" font-size="8" font-weight="bold" fill="#0f172a">AMOXICIL</text>
+    <text x="7" y="36" font-family="sans-serif" font-size="6" fill="#b45309">&le; 60 Days</text>
+  </g>
+
+  <!-- Middle Shelf: Large Prescription Clipboard -->
+  <g transform="translate(100, 142)">
+    <rect x="0" y="0" width="120" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow1)"/>
+    <!-- Clip -->
+    <rect x="42" y="-6" width="36" height="12" rx="3" fill="#64748b"/>
+    <!-- Checkmarks & Lines -->
+    <circle cx="18" cy="18" r="5" fill="#dcfce7"/>
+    <path d="M16 18 l2 2 l4 -4" stroke="#16a34a" stroke-width="1.5" fill="none"/>
+    <line x1="28" y1="18" x2="90" y2="18" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+    
+    <circle cx="18" cy="34" r="5" fill="#dcfce7"/>
+    <path d="M16 34 l2 2 l4 -4" stroke="#16a34a" stroke-width="1.5" fill="none"/>
+    <line x1="28" y1="34" x2="105" y2="34" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+
+    <circle cx="18" cy="50" r="5" fill="#e0f2fe"/>
+    <line x1="28" y1="50" x2="75" y2="50" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Middle Shelf: Blister Pack & Capsule -->
+  <g transform="translate(260, 150)">
+    <!-- Blister Pack Base -->
+    <rect x="0" y="0" width="75" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+    <!-- Pills on blister -->
+    <circle cx="18" cy="16" r="7" fill="#ffffff" stroke="#94a3b8"/>
+    <circle cx="38" cy="16" r="7" fill="#ffffff" stroke="#94a3b8"/>
+    <circle cx="58" cy="16" r="7" fill="#ffffff" stroke="#94a3b8"/>
+    <circle cx="18" cy="34" r="7" fill="#ffffff" stroke="#94a3b8"/>
+    <circle cx="38" cy="34" r="7" fill="#ffffff" stroke="#94a3b8"/>
+    <circle cx="58" cy="34" r="7" fill="#ffffff" stroke="#94a3b8"/>
+  </g>
+
+  <!-- Big Central Floating ExpiryGuard Shield Badge -->
+  <g transform="translate(330, 190)" filter="url(#shadow1)">
+    <path d="M45 0 L85 18 V65 C85 92 45 110 45 110 C45 110 5 92 5 65 V18 Z" fill="url(#shieldGrad)"/>
+    <path d="M45 8 L77 22 V62 C77 84 45 98 45 98 C45 98 13 84 13 62 V22 Z" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+    <!-- Shield Icon: Lock + Check -->
+    <circle cx="45" cy="50" r="18" fill="#ffffff" opacity="0.2"/>
+    <path d="M34 50 l8 8 l16 -16" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text x="45" y="85" font-family="sans-serif" font-size="8" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">FEFO ACTIVE</text>
+  </g>
+
+  <!-- Floating Large 3D Capsule Pill -->
+  <g transform="translate(130, 230) rotate(-20)" filter="url(#shadow1)">
+    <!-- Pill Half Left (Emerald Green) -->
+    <path d="M20 0 H50 V32 H20 C9 32 0 23 0 16 C0 9 9 0 20 0 Z" fill="url(#pillGrad)"/>
+    <!-- Pill Half Right (Clean White) -->
+    <path d="M50 0 H80 C91 0 100 9 100 16 C100 23 91 32 80 32 H50 Z" fill="#ffffff"/>
+    <line x1="50" y1="0" x2="50" y2="32" stroke="#0f172a" stroke-opacity="0.15" stroke-width="1.5"/>
+    <rect x="0" y="0" width="100" height="32" rx="16" fill="none" stroke="#e2e8f0" stroke-width="1.5"/>
+    <!-- Pill Highlight shine -->
+    <ellipse cx="30" cy="8" rx="16" ry="3" fill="#ffffff" opacity="0.4"/>
+    <text x="75" y="20" font-family="sans-serif" font-size="9" font-weight="bold" fill="#0284c7">Rx</text>
+  </g>
+
+  <!-- ECG Heartbeat Pulse Line at the bottom -->
+  <g transform="translate(60, 335)">
+    <path d="M0 15 H90 L105 0 L120 30 L135 8 L145 22 L155 15 H380" stroke="#0284c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.8"/>
+    <!-- Glowing Pulse Dot -->
+    <circle cx="155" cy="15" r="4.5" fill="#10b981"/>
+    <circle cx="155" cy="15" r="9" fill="#10b981" opacity="0.25"/>
+  </g>
+</svg>

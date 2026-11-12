@@ -1,0 +1,644 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Dashboard - RX Medical Store{% endblock %}
+{% block page_title %}Executive Dashboard{% endblock %}
+{% block page_subtitle %}Live Pharmacy Operations & Expiry Risk Intelligence{% endblock %}
+
+{% block topbar_actions %}
+<!-- Refresh Action & Timestamp -->
+<div style="display: flex; align-items: center; gap: 0.5rem;">
+    <button type="button" class="btn-refresh-data" id="btnRefreshDashboard" title="Sync live metrics with database">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        <span>Refresh</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Executive Welcome Banner -->
+<div class="executive-welcome-banner">
+    <div class="welcome-left">
+        <div class="welcome-status-pill-group">
+            <span class="status-live-pill">
+                <span class="pulse-dot"></span>
+                FEFO ENGINE ACTIVE
+            </span>
+            <span style="font-size:0.75rem; color:#94A3B8; background:rgba(255,255,255,0.08); padding:0.2rem 0.55rem; border-radius:9999px;">
+                0 Transaction Lag &bull; 100% Audit Tracked
+            </span>
+        </div>
+        <h2 class="welcome-greeting">
+            Welcome, {% if user_info %}{{ user_info.full_name }}{% else %}Pharmacist{% endif %}
+        </h2>
+        <p class="welcome-subtext">
+            Here is your pharmacy's live operational overview &bull; {{ today_date }}
+        </p>
+    </div>
+    <div class="welcome-right">
+        <div class="live-date-label">INDIAN STANDARD TIME</div>
+        <div class="live-time-badge" id="liveClockDisplay">--:--:--</div>
+        <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 0.2rem;">
+            Node: <strong>RX Medical Store &bull; Unit 1</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Control Bar with Period Pills -->
+<div class="dashboard-control-bar">
+    <div class="control-bar-title">
+        <span>Executive Key Performance Indicators</span>
+        <span style="font-size:0.78rem; font-weight:normal; color:var(--text-muted);">
+            (Last updated: <span id="lastUpdatedTime">{{ dashboard.last_updated }}</span>)
+        </span>
+    </div>
+    <div class="control-bar-actions">
+        <div class="period-pill-group">
+            <button type="button" class="period-pill" data-period="7d">Last 7 Days</button>
+            <button type="button" class="period-pill active" data-period="30d">Last 30 Days</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     AI SMART PHARMACY QUICK ACTIONS TOOLBAR
+     Voice Entry • Barcode / QR Scanner • AI Camera / OCR
+     ========================================================================== -->
+<div class="ai-quick-actions-bar">
+    <div class="ai-toolbar-title">
+        <span class="ai-sparkle-icon">✨</span>
+        <span>AI Smart Pharmacy Suite &bull; Voice &amp; Optical Automation</span>
+    </div>
+    <div class="ai-buttons-group">
+        <button type="button" class="btn-ai-action" id="btnOpenVoiceModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+            </svg>
+            <span>Voice Entry (English / Hindi)</span>
+        </button>
+        <button type="button" class="btn-ai-action" id="btnOpenBarcodeModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <rect width="10" height="10" x="7" y="7" rx="1"></rect>
+            </svg>
+            <span>Barcode &amp; QR Lookup</span>
+        </button>
+        <button type="button" class="btn-ai-action" id="btnOpenOCRModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                <circle cx="12" cy="13" r="3"></circle>
+            </svg>
+            <span>AI Camera &amp; Strip OCR</span>
+        </button>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     FIVE CORE KPI CARDS
+     ========================================================================== -->
+<div class="kpi-5-grid">
+    <!-- CARD 1: TODAY'S SALES -->
+    <a href="/billing-page" class="kpi-core-card teal" title="Open Billing Counter / Point of Sale">
+        <div>
+            <div class="kpi-top-row">
+                <span class="kpi-title">Today's Sales</span>
+                <div class="kpi-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                </div>
+            </div>
+            <div class="kpi-main-metric" id="kpi-today-rev">
+                ₹{{ "%.2f"|format(dashboard.kpi_today_sales.today_rev) }}
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-main); font-weight:600;" id="kpi-today-bills">
+                {{ dashboard.kpi_today_sales.today_bills }} bills today
+            </div>
+            <div class="kpi-footer-row">
+                <span>Yesterday: ₹{{ "%.2f"|format(dashboard.kpi_today_sales.yesterday_rev) }}</span>
+                {% if dashboard.kpi_today_sales.sales_growth_pct > 0 %}
+                <span class="trend-badge positive">↑ {{ dashboard.kpi_today_sales.sales_growth_pct }}%</span>
+                {% elif dashboard.kpi_today_sales.sales_growth_pct < 0 %}
+                <span class="trend-badge negative">↓ {{ dashboard.kpi_today_sales.sales_growth_pct }}%</span>
+                {% else %}
+                <span class="trend-badge neutral">0%</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+
+    <!-- CARD 2: INVENTORY VALUE -->
+    <a href="/medicines-page" class="kpi-core-card blue" title="Open Inventory Management">
+        <div>
+            <div class="kpi-top-row">
+                <span class="kpi-title">Inventory Valuation</span>
+                <div class="kpi-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                </div>
+            </div>
+            <div class="kpi-main-metric" id="kpi-inv-val" style="color: #0369A1;">
+                ₹{{ "%.2f"|format(dashboard.kpi_inventory.total_val) }}
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-main); font-weight:600;" id="kpi-inv-sub">
+                {{ dashboard.kpi_inventory.active_skus }} active SKUs &bull; {{ "{:,}".format(dashboard.kpi_inventory.total_units) }} units
+            </div>
+            <div class="kpi-footer-row">
+                <span>Total Active Lots</span>
+                <span style="font-weight:700; color:#0369A1;">{{ dashboard.kpi_inventory.total_batches }} lots</span>
+            </div>
+        </div>
+    </a>
+
+    <!-- CARD 3: LOW-STOCK MEDICINES -->
+    <a href="/medicines-page" class="kpi-core-card warning" title="Review Low-Stock Shortages">
+        <div>
+            <div class="kpi-top-row">
+                <span class="kpi-title">Low-Stock Risk</span>
+                <div class="kpi-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                </div>
+            </div>
+            <div class="kpi-main-metric" id="kpi-low-stock-count" style="color: var(--warning);">
+                {{ dashboard.kpi_low_stock.low_stock_count }} items
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-main); font-weight:600;" id="kpi-out-of-stock">
+                {{ dashboard.kpi_low_stock.out_of_stock_count }} critical stockouts
+            </div>
+            <div class="kpi-footer-row">
+                <span>Threshold Status</span>
+                <span class="badge badge-amber">Reorder Needed</span>
+            </div>
+        </div>
+    </a>
+
+    <!-- CARD 4: EXPIRING MEDICINES -->
+    <a href="/alerts-page" class="kpi-core-card danger" title="Open Expiry Risk Board">
+        <div>
+            <div class="kpi-top-row">
+                <span class="kpi-title">Expiry Capital Risk</span>
+                <div class="kpi-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+            </div>
+            <div class="kpi-main-metric" id="kpi-risk-val" style="color: var(--danger);">
+                ₹{{ "%.2f"|format(dashboard.kpi_expiry.total_at_risk_val) }}
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-main); font-weight:600;" id="kpi-risk-sub">
+                {{ dashboard.kpi_expiry.expired_count }} expired &bull; {{ dashboard.kpi_expiry.red_count }} red band (&le;30d)
+            </div>
+            <div class="kpi-footer-row">
+                <span>Expired Loss: ₹{{ "%.2f"|format(dashboard.kpi_expiry.expired_val) }}</span>
+                <span class="badge badge-red">FEFO Critical</span>
+            </div>
+        </div>
+    </a>
+
+    <!-- CARD 5: INVENTORY HEALTH -->
+    <a href="/alerts-page" class="kpi-core-card health" title="View Inventory Health Breakdown">
+        <div>
+            <div class="kpi-top-row">
+                <span class="kpi-title">Inventory Health</span>
+                <div class="kpi-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+            </div>
+            <div class="kpi-main-metric" id="kpi-health-score" style="color: #10B981;">
+                {{ dashboard.kpi_health.score }}/100
+            </div>
+        </div>
+        <div>
+            <div style="font-size:0.8rem; color:var(--text-main); font-weight:600;">
+                <span id="kpi-health-status" class="badge badge-{{ dashboard.kpi_health.color }}">
+                    {{ dashboard.kpi_health.status }}
+                </span>
+            </div>
+            <div class="kpi-footer-row">
+                <span>Safety Rating</span>
+                <span style="font-weight:700; color:#10B981;">Composite A+</span>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- ==========================================================================
+     SALES TRENDS AND ANALYTICS SECTION
+     ========================================================================== -->
+<div class="analytics-section-card">
+    <div class="card-header-flex">
+        <div>
+            <h3 class="card-title-main">Daily Sales Revenue & Transaction Velocity</h3>
+            <p class="card-subtitle">Real-time revenue curves derived from authenticated POS sales records.</p>
+        </div>
+        <div class="chart-summary-pills">
+            <div class="summary-stat-pill">
+                <span class="stat-pill-label">Period Revenue:</span>
+                <span class="stat-pill-val" id="chartPeriodRevenue">₹{{ "%.2f"|format(dashboard.revenue_7d_total) }}</span>
+            </div>
+            <div class="summary-stat-pill">
+                <span class="stat-pill-label">Total Bills:</span>
+                <span class="stat-pill-val" id="chartPeriodBills">{{ dashboard.bills_7d_total }}</span>
+            </div>
+            <div class="summary-stat-pill">
+                <span class="stat-pill-label">Average Order:</span>
+                <span class="stat-pill-val" id="chartPeriodAOV">₹{{ "%.2f"|format(dashboard.aov_7d) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Container -->
+    <div class="chart-container-box" id="salesChartContainer">
+        <!-- Rendered by dashboard.js via responsive vector SVG -->
+    </div>
+</div>
+
+<!-- ==========================================================================
+     INVENTORY HEALTH & EXPIRY INSIGHTS SECTION
+     ========================================================================== -->
+<div class="two-column-section">
+    <!-- Left: ExpiryGuard Actionable Preview Table -->
+    <div class="card">
+        <div class="card-header-flex">
+            <div>
+                <h3 class="card-title-main">ExpiryGuard™ Priority Action Board</h3>
+                <p class="card-subtitle">Highest risk pharmaceutical lots requiring FEFO priority sale or supplier return.</p>
+            </div>
+            <a href="/alerts-page" class="btn btn-xs btn-secondary">View All Alerts →</a>
+        </div>
+
+        <div class="table-responsive-wrapper">
+            <table class="enterprise-data-table">
+                <thead>
+                    <tr>
+                        <th>Medicine & Strength</th>
+                        <th>Batch No</th>
+                        <th>Expiry Date</th>
+                        <th>Days Left</th>
+                        <th>On Hand</th>
+                        <th>Risk Capital</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="expiryPreviewTableBody">
+                    {% if dashboard.expiry_batches and dashboard.expiry_batches|length > 0 %}
+                    {% for b in dashboard.expiry_batches %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--text-main);">{{ b.brand_name }}</strong>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">{{ b.strength }}</div>
+                        </td>
+                        <td><code>{{ b.batch_number }}</code></td>
+                        <td>{{ b.expiry_date }}</td>
+                        <td>
+                            {% if b.expiry_band == 'EXPIRED' %}
+                            <span class="badge badge-expired">EXPIRED</span>
+                            {% elif b.expiry_band == 'RED' %}
+                            <span class="badge badge-red">{{ b.days_left }}d left</span>
+                            {% else %}
+                            <span class="badge badge-amber">{{ b.days_left }}d left</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-weight:600;">{{ b.qty_on_hand }}</td>
+                        <td style="font-weight:700; color:var(--text-main);">₹{{ "%.2f"|format(b.stock_cost_value) }}</td>
+                        <td>
+                            {% if b.expiry_band == 'EXPIRED' %}
+                            <a href="/returns-page" class="btn btn-xs btn-danger" title="Quarantine & return to supplier">Return</a>
+                            {% elif b.expiry_band == 'RED' %}
+                            <a href="/billing-page" class="btn btn-xs btn-primary" title="Sell first via FEFO allocation">FEFO POS</a>
+                            {% else %}
+                            <a href="/alerts-page" class="btn btn-xs btn-secondary" title="Monitor turnover velocity">Monitor</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:1.5rem; color:var(--success);">
+                            ✓ All active batches have healthy shelf-life (>90 days).
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right: Inventory Capital Risk Composition -->
+    <div class="card">
+        <div class="card-header-flex">
+            <div>
+                <h3 class="card-title-main">Shelf-Life Distribution</h3>
+                <p class="card-subtitle">Capital segmentation across 4 expiry bands.</p>
+            </div>
+        </div>
+
+        <div class="distribution-bar-wrapper">
+            <div class="distribution-segment-bar">
+                {% set green_pct = (dashboard.kpi_expiry.green_val / (dashboard.kpi_inventory.total_val + 1) * 100)|round(1) %}
+                {% set amber_pct = (dashboard.kpi_expiry.amber_val / (dashboard.kpi_inventory.total_val + 1) * 100)|round(1) %}
+                {% set red_pct = (dashboard.kpi_expiry.red_val / (dashboard.kpi_inventory.total_val + 1) * 100)|round(1) %}
+                {% set exp_pct = (dashboard.kpi_expiry.expired_val / (dashboard.kpi_inventory.total_val + 1) * 100)|round(1) %}
+
+                <div class="dist-segment green" style="width: {{ green_pct }}%;" title="GREEN (>90d): {{ green_pct }}%"></div>
+                <div class="dist-segment amber" style="width: {{ amber_pct }}%;" title="AMBER (31-90d): {{ amber_pct }}%"></div>
+                <div class="dist-segment red" style="width: {{ red_pct }}%;" title="RED (≤30d): {{ red_pct }}%"></div>
+                <div class="dist-segment expired" style="width: {{ exp_pct }}%;" title="EXPIRED: {{ exp_pct }}%"></div>
+            </div>
+
+            <div class="distribution-legend-grid">
+                <div class="dist-legend-item green">
+                    <div><span class="legend-color-dot"></span><strong>GREEN (> 90 Days)</strong></div>
+                    <span>{{ dashboard.kpi_expiry.green_count }} lots &bull; ₹{{ "%.2f"|format(dashboard.kpi_expiry.green_val) }}</span>
+                </div>
+                <div class="dist-legend-item amber">
+                    <div><span class="legend-color-dot"></span><strong>AMBER (31–90 Days)</strong></div>
+                    <span>{{ dashboard.kpi_expiry.amber_count }} lots &bull; ₹{{ "%.2f"|format(dashboard.kpi_expiry.amber_val) }}</span>
+                </div>
+                <div class="dist-legend-item red">
+                    <div><span class="legend-color-dot"></span><strong>RED (&le; 30 Days)</strong></div>
+                    <span>{{ dashboard.kpi_expiry.red_count }} lots &bull; ₹{{ "%.2f"|format(dashboard.kpi_expiry.red_val) }}</span>
+                </div>
+                <div class="dist-legend-item expired">
+                    <div><span class="legend-color-dot"></span><strong>EXPIRED (Past Shelf-Life)</strong></div>
+                    <span>{{ dashboard.kpi_expiry.expired_count }} lots &bull; ₹{{ "%.2f"|format(dashboard.kpi_expiry.expired_val) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="background:#F8FAFC; border:1px dashed var(--border); border-radius:var(--radius-sm); padding:0.75rem; font-size:0.75rem; color:#475569; margin-top:0.75rem;">
+            <strong>FEFO Automation:</strong> POS billing system automatically selects the earliest expiring lot, safeguarding stock velocity.
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     RECENT TRANSACTIONS & ACTIVITY / SMART ALERTS
+     ========================================================================== -->
+<div class="two-column-equal">
+    <!-- Left: Tabbed Store Activity -->
+    <div class="card">
+        <div class="card-header-flex">
+            <div>
+                <h3 class="card-title-main">Recent Store Transactions</h3>
+                <p class="card-subtitle">Real-time journal of counter billing and supplier inward notes.</p>
+            </div>
+            <div class="tab-nav-pills">
+                <button type="button" class="tab-btn active" data-tab="tabSalesActivity">Recent Bills</button>
+                <button type="button" class="tab-btn" data-tab="tabGrnActivity">Stock Inward (GRN)</button>
+            </div>
+        </div>
+
+        <!-- Sales Activity Tab -->
+        <div class="activity-tab-content" id="tabSalesActivity">
+            <div class="table-responsive-wrapper">
+                <table class="enterprise-data-table">
+                    <thead>
+                        <tr>
+                            <th>Bill #</th>
+                            <th>Time</th>
+                            <th>Patient / Customer</th>
+                            <th>Payment</th>
+                            <th>Items</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dashboard.recent_sales and dashboard.recent_sales|length > 0 %}
+                        {% for s in dashboard.recent_sales %}
+                        <tr>
+                            <td><strong style="color:var(--primary-dark);">#{{ s.sale_id }}</strong></td>
+                            <td style="font-size:0.75rem; color:var(--text-muted);">{{ s.sale_time.split(' ')[1] if ' ' in s.sale_time else s.sale_time }}</td>
+                            <td>{{ s.customer_name }}</td>
+                            <td><span class="badge badge-neutral" style="font-size:0.68rem;">{{ s.payment_mode }}</span></td>
+                            <td>{{ s.units }}</td>
+                            <td style="font-weight:700;">₹{{ "%.2f"|format(s.total_amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:1rem; color:var(--text-muted);">No sales recorded today yet.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:0.75rem; text-align:right;">
+                <a href="/billing-page" class="btn btn-xs btn-primary">Start New Bill →</a>
+            </div>
+        </div>
+
+        <!-- GRN Deliveries Tab -->
+        <div class="activity-tab-content" id="tabGrnActivity" style="display:none;">
+            <div class="table-responsive-wrapper">
+                <table class="enterprise-data-table">
+                    <thead>
+                        <tr>
+                            <th>GRN #</th>
+                            <th>Supplier Name</th>
+                            <th>Invoice No</th>
+                            <th>Date</th>
+                            <th>Batches</th>
+                            <th>Units</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dashboard.recent_grn and dashboard.recent_grn|length > 0 %}
+                        {% for g in dashboard.recent_grn %}
+                        <tr>
+                            <td><strong style="color:var(--primary);">#{{ g.grn_id }}</strong></td>
+                            <td>{{ g.supplier_name }}</td>
+                            <td><code>{{ g.invoice_number }}</code></td>
+                            <td style="font-size:0.75rem;">{{ g.invoice_date }}</td>
+                            <td><span class="badge badge-teal">{{ g.batch_count }} lots</span></td>
+                            <td style="font-weight:700;">{{ g.total_units }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:1rem; color:var(--text-muted);">No recent stock inward records.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:0.75rem; text-align:right;">
+                <a href="/grn-page" class="btn btn-xs btn-secondary">Receive New Stock →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Smart Operational Action Alerts -->
+    <div class="card">
+        <div class="card-header-flex">
+            <div>
+                <h3 class="card-title-main">Operational Action Alerts</h3>
+                <p class="card-subtitle">Actionable alerts requiring immediate pharmacist or administrative decision.</p>
+            </div>
+            <span class="badge badge-teal">{{ dashboard.smart_alerts|length }} Active</span>
+        </div>
+
+        <div>
+            {% if dashboard.smart_alerts and dashboard.smart_alerts|length > 0 %}
+            {% for a in dashboard.smart_alerts %}
+            <div class="smart-alert-card {{ a.type }}">
+                <div class="alert-icon-circle">
+                    {% if a.type == 'danger' %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
+                    {% elif a.type == 'warning' %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {% else %}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                    {% endif %}
+                </div>
+                <div class="alert-content-wrap">
+                    <div class="alert-item-title">{{ a.title }}</div>
+                    <p class="alert-item-text">{{ a.message }}</p>
+                    <a href="{{ a.cta_url }}" class="alert-btn-action">{{ a.cta_text }} →</a>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="padding:2rem; text-align:center; color:var(--success);">
+                <div style="font-size:1.5rem; margin-bottom:0.4rem;">✓</div>
+                <strong>Zero Active Stock Violations</strong>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">No critical expirations or safety stockouts detected in database.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     AI MODAL 1: VOICE-BASED DATA ENTRY MODAL
+     ========================================================================== -->
+<div class="ai-modal-overlay" id="modalVoiceEntry">
+    <div class="ai-modal-card">
+        <div class="ai-modal-header">
+            <h3>
+                <span>🎙️</span>
+                <span>Voice-Based Medicine Entry (English / Hindi)</span>
+            </h3>
+            <button type="button" class="btn-modal-close" data-close="modalVoiceEntry">&times;</button>
+        </div>
+        <div class="ai-modal-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main);">Recognition Language:</label>
+                <select id="voiceLanguageSelect" class="form-select" style="padding:0.35rem 0.75rem; border-radius:6px; border:1px solid var(--border-color); font-size:0.85rem;">
+                    <option value="en-IN" selected>English (India)</option>
+                    <option value="hi-IN">Hindi / Hinglish (हिंदी)</option>
+                </select>
+            </div>
+
+            <div class="voice-mic-container">
+                <button type="button" class="btn-mic-pulse" id="btnToggleRecord" title="Click to start/stop speaking">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" x2="12" y1="19" y2="22"></line>
+                    </svg>
+                </button>
+                <div class="voice-status-text" id="voiceStatusText">Tap microphone to speak details</div>
+            </div>
+
+            <div style="margin-top:1rem;">
+                <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Spoken Transcript / Voice Command:</label>
+                <textarea id="voiceTranscriptInput" rows="3" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="e.g. Add 50 strips of Dolo 650, batch ABC123, expiry March 2027, purchase price 18 rupees, selling price 25 rupees"></textarea>
+                <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnProcessVoice">Extract &amp; Validate Fields →</button>
+                </div>
+            </div>
+
+            <!-- Extracted Draft Review Box -->
+            <div id="voiceExtractedResult" class="extracted-result-box" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+                    <strong style="color:var(--text-main); font-size:0.9rem;">Review Extracted Fields</strong>
+                    <span id="voiceConfidenceBadge" class="badge badge-green">100% Match</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; font-size:0.82rem;">
+                    <div><strong>Medicine:</strong> <span id="vResMed">-</span></div>
+                    <div><strong>Quantity:</strong> <span id="vResQty">-</span></div>
+                    <div><strong>Batch No:</strong> <span id="vResBatch">-</span></div>
+                    <div><strong>Expiry Date:</strong> <span id="vResExp">-</span></div>
+                    <div><strong>Purchase Cost:</strong> <span id="vResCost">-</span></div>
+                    <div><strong>Selling Price:</strong> <span id="vResPrice">-</span></div>
+                </div>
+                <div style="margin-top:0.85rem; text-align:right;">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnConfirmVoiceSave">✓ Confirm &amp; Add to Stock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     AI MODAL 2: BARCODE & QR CODE SCANNER MODAL
+     ========================================================================== -->
+<div class="ai-modal-overlay" id="modalBarcodeScanner">
+    <div class="ai-modal-card">
+        <div class="ai-modal-header">
+            <h3>
+                <span>📦</span>
+                <span>Barcode &amp; QR Code Catalog Scanner</span>
+            </h3>
+            <button type="button" class="btn-modal-close" data-close="modalBarcodeScanner">&times;</button>
+        </div>
+        <div class="ai-modal-body">
+            <div style="margin-bottom:1.25rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Scan or Enter Barcode / Medicine ID:</label>
+                <div style="display:flex; gap:0.5rem;">
+                    <input type="text" id="barcodeCodeInput" class="form-input" style="flex:1; padding:0.65rem 0.85rem; border:1px solid var(--border-color); border-radius:8px;" placeholder="Scan with 1D/2D reader or type code e.g. 1">
+                    <button type="button" class="btn btn-primary" id="btnLookupBarcode">Scan / Lookup</button>
+                </div>
+            </div>
+
+            <!-- Scanned Medicine Result Display -->
+            <div id="barcodeResultContainer" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     AI MODAL 3: AI CAMERA & PACKAGING OCR MODAL
+     ========================================================================== -->
+<div class="ai-modal-overlay" id="modalOCRScanner">
+    <div class="ai-modal-card">
+        <div class="ai-modal-header">
+            <h3>
+                <span>📷</span>
+                <span>AI Optical Packaging &amp; Invoice OCR</span>
+            </h3>
+            <button type="button" class="btn-modal-close" data-close="modalOCRScanner">&times;</button>
+        </div>
+        <div class="ai-modal-body">
+            <div style="margin-bottom:1.25rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Upload Medicine Strip / Packaging Photo or Paste Text:</label>
+                <input type="file" id="ocrFileInput" accept="image/*,.pdf" style="margin-bottom:0.75rem; width:100%; font-size:0.85rem;">
+                <textarea id="ocrRawTextInput" rows="3" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="Or paste raw text from invoice / camera e.g. DOLO 650 Tablets B.No: DLO2025 EXP: 12/2027 M.R.P. Rs. 34.50"></textarea>
+                <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
+                    <button type="button" class="btn btn-primary" id="btnProcessOCR">Run AI OCR Extraction →</button>
+                </div>
+            </div>
+
+            <!-- OCR Extraction Result Display -->
+            <div id="ocrResultContainer" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Embed verified server-side dashboard data directly to prevent duplicate initial network fetch
+    window.__DASHBOARD_DATA__ = {{ dashboard | tojson }};
+</script>
+<script src="/static/dashboard.js"></script>
+{% endblock %}

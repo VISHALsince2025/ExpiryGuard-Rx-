@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Risk & Alerts - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <h2>Batch Expiry Monitoring & ML Risk Action Board</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Identifies inventory approaching shelf-life boundaries, calculates units at risk using predictive demand forecasting, and triggers supplier returns.
+    </p>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.5rem;" id="band-filter-group">
+            <button class="btn btn-sm btn-secondary active-filter" data-band="">All Lots</button>
+            <button class="btn btn-sm btn-danger" data-band="EXPIRED">EXPIRED</button>
+            <button class="btn btn-sm btn-danger" style="background:#ef4444;" data-band="RED">RED (&le;30d)</button>
+            <button class="btn btn-sm btn-secondary" style="background:#fef3c7;color:#b45309;" data-band="AMBER">AMBER (&le;90d)</button>
+            <button class="btn btn-sm btn-secondary" style="background:#dcfce7;color:#15803d;" data-band="GREEN">GREEN</button>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+            ML Demand Projection: <strong>Holt-Winters / Exponential Smoothing</strong>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Batch Lot</th>
+                    <th>Expiry Date</th>
+                    <th>Days Left</th>
+                    <th>Stock Qty</th>
+                    <th>Stock Cost</th>
+                    <th>Expiry Band</th>
+                    <th>Predicted Daily Units</th>
+                    <th>Units at Risk</th>
+                    <th>Value at Risk (₹)</th>
+                    {% if user and user.role in ['Admin', 'Pharmacist', 'Purchase'] %}
+                    <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="alerts-table-body">
+                <tr><td colspan="11" style="text-align: center; color: #64748b;">Loading expiry data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Raise Return from Expiry Alert -->
+<div id="raise-return-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Initiate Supplier Return</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="raise-return-form">
+            <input type="hidden" id="return-batch-id">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Returning stock for lot <strong id="return-batch-num"></strong> (<span id="return-med-name"></span>).
+            </p>
+            <div class="form-group">
+                <label for="return-qty">Quantity to Return</label>
+                <input type="number" id="return-qty" min="1" required>
+                <small style="color: var(--text-muted);">Maximum available: <span id="return-max-qty"></span></small>
+            </div>
+            <div class="form-group">
+                <label for="return-reason">Return Reason</label>
+                <select id="return-reason" required>
+                    <option value="NEAR_EXPIRY">NEAR_EXPIRY</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="DAMAGED">DAMAGED</option>
+                    <option value="RECALL">RECALL</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Return for Approval</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/alerts.js"></script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Reports & KPIs - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h2>Pharmacy Business Intelligence & 9 Core KPIs</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Decision-oriented analytics matching the Power BI data model. All values are calculated directly from SQL aggregate views.
+    </p>
+</div>
+
+<!-- Overview Row -->
+<div class="grid-3" style="margin-bottom: 1.5rem;">
+    <!-- KPI 2 -->
+    <div class="card kpi-card danger">
+        <div class="kpi-label">KPI 2: Near-Expiry Stock Value (RED + AMBER)</div>
+        <div class="kpi-value" id="kpi2-val">₹0.00</div>
+        <div class="kpi-sub" id="kpi2-sub">Critical inventory capital within 90 days of shelf-life expiry.</div>
+        <p style="font-size:0.75rem; color:#475569; margin-top:0.5rem; border-top:1px dashed #cbd5e1; padding-top:0.4rem;">
+            <strong>Decision Supported:</strong> Quantifies capital immediately at risk; directs counter staff to push FEFO sales or trigger supplier returns before value is lost.
+        </p>
+    </div>
+
+    <!-- KPI 8 -->
+    <div class="card kpi-card warning">
+        <div class="kpi-label">KPI 8: Urgent Reorder Candidates (Query Q4)</div>
+        <div class="kpi-value" id="kpi8-count">0 items</div>
+        <div class="kpi-sub">Total inventory balance strictly below configured safety threshold.</div>
+        <p style="font-size:0.75rem; color:#475569; margin-top:0.5rem; border-top:1px dashed #cbd5e1; padding-top:0.4rem;">
+            <strong>Decision Supported:</strong> What to purchase today; shields pharmacy against stock-out emergencies and patient turnaways.
+        </p>
+    </div>
+
+    <!-- Today's Revenue -->
+    <div class="card kpi-card success">
+        <div class="kpi-label">Today's Cashier Revenue</div>
+        <div class="kpi-value" id="today-rev-val">₹0.00</div>
+        <div class="kpi-sub" id="today-bills-val">0 completed sales</div>
+        <p style="font-size:0.75rem; color:#475569; margin-top:0.5rem; border-top:1px dashed #cbd5e1; padding-top:0.4rem;">
+            <strong>Decision Supported:</strong> Real-time operational counter volume and register cash balancing.
+        </p>
+    </div>
+</div>
+
+<!-- KPI 1 & KPI 6 Row -->
+<div class="grid-2">
+    <!-- KPI 1 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 1: Expiry Loss in Rupees by Month</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Are we over-purchasing? Which delivery seasons produced highest write-offs?
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Expiry Month</th>
+                        <th>Units Lost</th>
+                        <th>Loss Value (₹ Cost)</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi1-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- KPI 6 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 6: Daily Sales Revenue Trend (Last 30 Days)</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Day-of-week demand velocity for cash planning and counter staffing.
+        </p>
+        <div style="overflow-x: auto; max-height: 320px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Units Dispensed</th>
+                        <th>Gross Revenue (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi6-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- KPI 4 & KPI 5 Row -->
+<div class="grid-2">
+    <!-- KPI 4 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 4: Top 10 Fast Movers (30 Days)</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Identifies high-turnover lines requiring continuous replenishment agreements.
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Units Sold</th>
+                        <th>Revenue (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi4-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- KPI 5 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 5: Slow Movers (Tied-up Capital)</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> What to stop reordering; isolates stagnant inventory before shelf-life expires.
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Stock Held</th>
+                        <th>Tied-Up Capital (₹)</th>
+                        <th>30d Sales</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi5-table-body">
+                    <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- KPI 7, 8, 9 Row -->
+<div class="grid-3">
+    <!-- KPI 7 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 7: Supplier Return Performance</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Which wholesalers accept credit notes vs uncooperative suppliers to drop.
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Wholesaler</th>
+                        <th>Units</th>
+                        <th>Credit (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi7-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- KPI 8 Details -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 8: Urgent Reorder List</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Immediate purchase orders to issue today.
+        </p>
+        <div style="overflow-x: auto; max-height: 250px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Stock</th>
+                        <th>Target</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi8-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- KPI 9 -->
+    <div class="card">
+        <div class="card-title">
+            <span>KPI 9: Cashier & Payment Channels</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <strong>Decision Supported:</strong> Counter shift balancing and digital payment vs cash reconciliation.
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Terminal / Staff</th>
+                        <th>Bills</th>
+                        <th>Revenue (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="kpi9-table-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/reports.js"></script>
+{% endblock %}

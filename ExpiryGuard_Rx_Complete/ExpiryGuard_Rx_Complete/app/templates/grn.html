@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Receive Stock (GRN) - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <h2>Goods Received Note (GRN) & Inward Stock Receiving</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Record multi-batch deliveries in an atomic SQL transaction with batch-level cost, expiry date, and invoice scan upload.
+    </p>
+</div>
+
+<!-- Inward GRN Entry Card -->
+<div class="card">
+    <div class="card-title">
+        <span>Delivery Header & Wholesaler Invoice</span>
+    </div>
+
+    <div class="grid-3" style="margin-bottom: 1.25rem;">
+        <div class="form-group">
+            <label for="grn-supplier-select">Wholesaler / Supplier</label>
+            <select id="grn-supplier-select" required>
+                <option value="">Loading suppliers...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="grn-invoice-number">Invoice Number</label>
+            <input type="text" id="grn-invoice-number" placeholder="e.g. INV-2026-904" required maxlength="50">
+        </div>
+        <div class="form-group">
+            <label for="grn-invoice-date">Invoice Date</label>
+            <input type="date" id="grn-invoice-date" value="{{ today }}" required>
+        </div>
+    </div>
+
+    <div class="card-title" style="margin-top: 1rem;">
+        <span>Batches in Delivery</span>
+        <button type="button" id="btn-add-batch-row" class="btn btn-sm btn-secondary">+ Add Batch Lot</button>
+    </div>
+
+    <div style="overflow-x: auto; margin-bottom: 1.25rem;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 220px;">Medicine Product</th>
+                    <th style="min-width: 140px;">Batch Lot #</th>
+                    <th style="min-width: 140px;">Expiry Date</th>
+                    <th>Qty Received</th>
+                    <th>Unit Cost (₹)</th>
+                    <th>Selling Price (₹)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="grn-batches-body">
+                <!-- Dynamic rows added by grn.js -->
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+        <button type="button" id="btn-submit-grn" class="btn btn-primary" style="padding: 0.65rem 1.5rem;">
+            Submit Stock Received (Save GRN)
+        </button>
+    </div>
+</div>
+
+<!-- Recent Deliveries Ledger -->
+<div class="card">
+    <div class="card-title">
+        <span>Recent Goods Received Deliveries</span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>GRN #</th>
+                    <th>Wholesaler</th>
+                    <th>Invoice No</th>
+                    <th>Invoice Date</th>
+                    <th>Batches / Volume</th>
+                    <th>Received By</th>
+                    <th>Scan Document</th>
+                </tr>
+            </thead>
+            <tbody id="recent-grn-body">
+                <tr><td colspan="7" style="text-align: center; color: #64748b;">Loading deliveries history...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Scanned Invoice Upload -->
+<div id="upload-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Upload Scanned Supplier Invoice</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="upload-form">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Attaching scan to GRN #<strong id="upload-grn-id"></strong>. Scanned document is safely stored in private Azure Blob Storage with metadata recorded in Cosmos DB.
+            </p>
+            <div class="form-group">
+                <label for="invoice-file-input">Select Invoice Document (PDF, PNG, JPG &bull; Max 5 MB)</label>
+                <input type="file" id="invoice-file-input" accept=".pdf,image/png,image/jpeg" required>
+            </div>
+            <div id="upload-status" style="margin-bottom: 1rem; font-size: 0.85rem;"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Skip / Close</button>
+                <button type="submit" class="btn btn-primary">Upload & Attach Scan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/grn.js"></script>
+{% endblock %}

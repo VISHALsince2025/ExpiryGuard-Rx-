@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Point of Sale (FEFO) - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <h2>Point of Sale & FEFO Stock Dispensing Console</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Stock is automatically allocated from earliest-expiring unexpired batches first in a single atomic database transaction.
+    </p>
+</div>
+
+<div class="grid-2">
+    <!-- Left: Cart & Bill Items -->
+    <div class="card">
+        <div class="card-title">
+            <span>Bill Line Items</span>
+            <span style="font-size: 0.85rem; color: #0284c7;">Algorithm: First Expiry, First Out (FEFO)</span>
+        </div>
+
+        <div style="margin-bottom: 1rem; position: relative;">
+            <label for="med-search-input">Search Medicine to Dispense</label>
+            <input type="text" id="med-search-input" placeholder="Type medicine brand name or composition..." autocomplete="off">
+            <div id="med-search-results" style="position: absolute; width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-top: none; z-index: 50; max-height: 240px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: var(--shadow);"></div>
+        </div>
+
+        <div style="overflow-x: auto; margin-bottom: 1rem;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty Needed</th>
+                        <th>Allocation Mode</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-items-body">
+                    <tr><td colspan="4" style="text-align:center;color:#64748b;">No medicines added to bill yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right: Bill Details & Payment -->
+    <div class="card">
+        <div class="card-title">
+            <span>Billing Summary & Payment</span>
+        </div>
+
+        <div class="form-group">
+            <label for="customer-name-input">Customer / Patient Name (Optional)</label>
+            <input type="text" id="customer-name-input" placeholder="e.g. Rahul Sharma" maxlength="100">
+        </div>
+
+        <div class="form-group">
+            <label for="payment-mode-select">Payment Method</label>
+            <select id="payment-mode-select" required>
+                <option value="CASH">CASH</option>
+                <option value="UPI">UPI / Digital QR</option>
+                <option value="CARD">Debit / Credit Card</option>
+            </select>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                <span style="color: var(--text-muted);">Total Dispensing Units:</span>
+                <strong id="bill-total-units">0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.15rem;">
+                <span>Estimated Total:</span>
+                <strong id="bill-total-amount" style="color: var(--primary);">₹0.00</strong>
+            </div>
+        </div>
+
+        <button type="button" id="btn-checkout" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+            Dispense & Generate Bill (FEFO)
+        </button>
+    </div>
+</div>
+
+<!-- Modal: Prescription Details Entry -->
+<div id="rx-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Prescription Register Requirement</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="rx-form">
+            <p style="font-size: 0.85rem; color: #b45309; background: #fef3c7; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem;">
+                <strong>Regulatory Compliance:</strong> <span id="rx-med-name"></span> is flagged as a prescription-only drug. Enter patient and prescriber details for the statutory register (dummy data).
+            </p>
+            <div class="form-group">
+                <label for="rx-patient-name">Patient Name</label>
+                <input type="text" id="rx-patient-name" required maxlength="100" placeholder="e.g. Sunita Devi">
+            </div>
+            <div class="form-group">
+                <label for="rx-doctor-name">Prescribing Doctor Name</label>
+                <input type="text" id="rx-doctor-name" required maxlength="100" placeholder="e.g. Dr. A. K. Verma">
+            </div>
+            <div class="form-group">
+                <label for="rx-reg-no">Doctor Medical Council Reg. No.</label>
+                <input type="text" id="rx-reg-no" required maxlength="40" placeholder="e.g. MCI-2015-8492">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Confirm Prescription & Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Completed Receipt -->
+<div id="receipt-modal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Completed Dispensing Bill</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <div id="receipt-content"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/billing.js"></script>
+{% endblock %}

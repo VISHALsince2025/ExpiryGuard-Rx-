@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ExpiryGuard Rx &bull; Made by VISHAL</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top left, #f0f9ff 0%, #e0f2fe 45%, #f8fafc 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Top Floating Made by VISHAL Header */
+        .top-creator-banner {
+            position: absolute;
+            top: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            padding: 0.4rem 1.1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            z-index: 10;
+        }
+        .top-creator-banner .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulseDot 2s infinite ease-in-out;
+        }
+        .top-creator-banner .author-glow {
+            color: #38bdf8;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+        }
+
+        /* Main Container Container */
+        .portal-wrapper {
+            display: flex;
+            max-width: 960px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.15), 0 0 0 1px #e2e8f0;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        /* Left Hero Showcase */
+        .portal-hero {
+            flex: 1.1;
+            background: linear-gradient(160deg, #f8fafc 0%, #f0f9ff 60%, #e0f2fe 100%);
+            padding: 2.75rem 2.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .portal-hero-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .portal-hero-header .brand-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .portal-hero-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-top: 0.4rem;
+        }
+
+        .illustration-box {
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .illustration-box img {
+            max-width: 100%;
+            height: auto;
+            max-height: 220px;
+            filter: drop-shadow(0 10px 15px rgba(2, 132, 199, 0.12));
+        }
+
+        .feature-bullets {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .feature-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #334155;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.45rem 0.65rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-weight: 500;
+        }
+
+        /* Right Form Card */
+        .portal-form-pane {
+            flex: 1;
+            padding: 2.75rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .form-heading {
+            margin-bottom: 1.75rem;
+        }
+        .form-heading h2 {
+            font-size: 1.4rem;
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .form-heading p {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 0.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .form-group input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            outline: none;
+        }
+
+        .btn-signin {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-signin:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+        }
+
+        /* Demo Role Quick-Select Chips */
+        .demo-section {
+            margin-top: 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .demo-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.65rem;
+        }
+        .role-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .role-chip {
+            background: #f1f5f9;
+            color: #334155;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            transition: all 0.15s;
+        }
+        .role-chip:hover {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-color: #7dd3fc;
+        }
+
+        @media (max-width: 768px) {
+            .portal-wrapper { flex-direction: column; }
+            .portal-hero { display: none; }
+            .portal-form-pane { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Prominent Badge: Made by VISHAL -->
+    <div class="top-creator-banner">
+        <span class="pulse-dot"></span>
+        <span>Enterprise Pharmacy Suite &bull; Made by <span class="author-glow">VISHAL</span></span>
+    </div>
+
+    <div class="portal-wrapper">
+        <!-- Left Showcase Side with Illustration -->
+        <div class="portal-hero">
+            <div class="portal-hero-header">
+                <div class="brand-title">
+                    <img src="/static/img/rx-logo.svg" alt="Rx Logo" width="36" height="36">
+                    <span>ExpiryGuard <span style="background:#0284c7;color:#fff;font-size:0.95rem;padding:0.15rem 0.45rem;border-radius:6px;">Rx</span></span>
+                </div>
+                <p>Cloud-Based Batch-Level Inventory & Expiry Prevention</p>
+            </div>
+
+            <!-- Pharmacy Visual Artwork -->
+            <div class="illustration-box">
+                <img src="/static/img/pharmacy-illustration.svg" alt="Pharmacy Operations">
+            </div>
+
+            <!-- Feature Pills -->
+            <div class="feature-bullets">
+                <div class="feature-pill">⚡ <strong>FEFO Dispensing</strong></div>
+                <div class="feature-pill">🛡️ <strong>Zero Expiry Loss</strong></div>
+                <div class="feature-pill">📦 <strong>GRN & Batch Trace</strong></div>
+                <div class="feature-pill">🔒 <strong>100% Audit Trail</strong></div>
+            </div>
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <div class="portal-form-pane">
+            <div class="form-heading">
+                <h2>Sign In to Console</h2>
+                <p>Access dispensing, stock management & analytics</p>
+            </div>
+
+            {% if error %}
+            <div style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;padding:0.65rem 0.85rem;border-radius:8px;font-size:0.85rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem;">
+                <span>⚠️</span>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form action="/auth/login" method="POST">
+                <div class="form-group" style="margin-bottom: 1.1rem;">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username" autofocus maxlength="50" placeholder="e.g. admin or counter1">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password" maxlength="128" placeholder="Enter password">
+                </div>
+
+                <button type="submit" class="btn-signin">
+                    Sign In to Dispensing Console →
+                </button>
+            </form>
+
+            <!-- Quick Autofill Chips for Demo Testing -->
+            <div class="demo-section">
+                <div class="demo-section-title">Quick Demo Login (Click to fill):</div>
+                <div class="role-chips">
+                    <span class="role-chip" onclick="fillForm('admin', 'Admin@12345')">👑 Admin</span>
+                    <span class="role-chip" onclick="fillForm('pharmacist', 'Admin@12345')">💊 Pharmacist</span>
+                    <span class="role-chip" onclick="fillForm('cashier', 'Admin@12345')">💳 Cashier</span>
+                    <span class="role-chip" onclick="fillForm('purchase', 'Admin@12345')">📦 Purchase</span>
+                    <span class="role-chip" onclick="fillForm('auditor', 'Admin@12345')">🛡️ Auditor</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fillForm(user, pass) {
+            document.getElementById('username').value = user;
+            document.getElementById('password').value = pass;
+        }
+    </script>
+</body>
+</html>

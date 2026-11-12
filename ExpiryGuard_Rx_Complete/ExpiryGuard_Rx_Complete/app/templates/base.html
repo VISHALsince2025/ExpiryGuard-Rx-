@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Executive Dashboard{% endblock %} - RX Medical Store</title>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="enterprise-app">
+    <div class="app-shell" id="appShell">
+        <!-- Sidebar Backdrop for Mobile -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <!-- Left Collapsible Sidebar -->
+        <aside class="app-sidebar" id="appSidebar">
+            <!-- Sidebar Header / Brand -->
+            <div class="sidebar-header">
+                <a href="/dashboard" class="sidebar-brand">
+                    <img src="/static/img/rx-logo.svg" alt="RX Logo" class="brand-logo" width="36" height="36">
+                    <div class="brand-text">
+                        <span class="brand-name">RX Medical Store</span>
+                        <span class="brand-suite">ExpiryGuard Rx</span>
+                    </div>
+                </a>
+                <button type="button" class="sidebar-close-mobile" id="sidebarCloseMobile" aria-label="Close Navigation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Made by VISHAL Badge -->
+            <div class="sidebar-attribution-card" title="Software Architect & Lead Engineer">
+                <div class="dev-badge-inner">
+                    <span class="pulse-dot"></span>
+                    <span class="dev-text">Made by <strong class="dev-name">VISHAL</strong></span>
+                </div>
+            </div>
+
+            <!-- Navigation Sections -->
+            <div class="sidebar-nav-container">
+                <div class="nav-section-title">Core Operations</div>
+                <nav class="sidebar-nav">
+                    <a href="/dashboard" class="nav-item {% if request.url.path == '/dashboard' %}active{% endif %}" title="Executive Dashboard">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                        </span>
+                        <span class="nav-label">Executive Dashboard</span>
+                    </a>
+
+                    {% if user and user.role in ['Admin', 'Pharmacist', 'Counter'] %}
+                    <a href="/billing-page" class="nav-item {% if request.url.path == '/billing-page' %}active{% endif %}" title="Point of Sale">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                        </span>
+                        <span class="nav-label">Billing / POS (FEFO)</span>
+                    </a>
+                    {% endif %}
+
+                    {% if user and user.role in ['Admin', 'Pharmacist'] %}
+                    <a href="/grn-page" class="nav-item {% if request.url.path == '/grn-page' %}active{% endif %}" title="Receive Stock (GRN)">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                        </span>
+                        <span class="nav-label">Receive Stock (GRN)</span>
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <div class="nav-section-title">Inventory & Expiry</div>
+                <nav class="sidebar-nav">
+                    <a href="/medicines-page" class="nav-item {% if request.url.path == '/medicines-page' %}active{% endif %}" title="Inventory Management">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+                        </span>
+                        <span class="nav-label">Inventory & Medicines</span>
+                    </a>
+
+                    <a href="/alerts-page" class="nav-item {% if request.url.path == '/alerts-page' %}active{% endif %}" title="ExpiryGuard Alerts">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                        </span>
+                        <span class="nav-label">ExpiryGuard Risk</span>
+                    </a>
+
+                    {% if user and user.role in ['Admin', 'Pharmacist', 'Purchase'] %}
+                    <a href="/returns-page" class="nav-item {% if request.url.path == '/returns-page' %}active{% endif %}" title="Supplier Returns">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </span>
+                        <span class="nav-label">Supplier Returns</span>
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <div class="nav-section-title">Intelligence & Governance</div>
+                <nav class="sidebar-nav">
+                    {% if user and user.role in ['Admin', 'Pharmacist', 'Purchase', 'Auditor'] %}
+                    <a href="/reports-page" class="nav-item {% if request.url.path == '/reports-page' %}active{% endif %}" title="Reports & Analytics">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+                        </span>
+                        <span class="nav-label">Reports & Analytics</span>
+                    </a>
+                    {% endif %}
+
+                    {% if user and user.role in ['Admin', 'Auditor'] %}
+                    <a href="/audit-page" class="nav-item {% if request.url.path == '/audit-page' %}active{% endif %}" title="Audit Logs">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </span>
+                        <span class="nav-label">Audit Logs</span>
+                    </a>
+                    {% endif %}
+
+                    {% if user and user.role == 'Admin' %}
+                    <a href="/users-page" class="nav-item {% if request.url.path == '/users-page' %}active{% endif %}" title="Staff Management">
+                        <span class="nav-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </span>
+                        <span class="nav-label">Staff Management</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <!-- Sidebar Collapse Toggle Button -->
+            <div class="sidebar-footer">
+                <button type="button" class="btn-sidebar-collapse" id="btnSidebarCollapse" title="Toggle Sidebar Width">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9-3 3 3 3"/></svg>
+                    <span class="collapse-label">Collapse Menu</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="app-main">
+            <!-- Top Navigation Bar -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <button type="button" class="btn-mobile-nav" id="btnMobileNav" aria-label="Toggle Mobile Navigation">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                    </button>
+                    <div class="page-header-text">
+                        <h1 class="page-title">{% block page_title %}Executive Dashboard{% endblock %}</h1>
+                        <p class="page-subtitle">{% block page_subtitle %}Live Pharmacy Operations & Expiry Risk Intelligence{% endblock %}</p>
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <!-- Global Medicine Search -->
+                    <div class="global-search-container" id="globalSearchContainer">
+                        <div class="search-input-wrap">
+                            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" id="globalMedicineSearch" placeholder="Search medicines, batches... (Ctrl+K)" autocomplete="off">
+                            <kbd class="search-kbd">Ctrl+K</kbd>
+                        </div>
+                        <div class="search-dropdown" id="globalSearchDropdown" style="display: none;"></div>
+                    </div>
+
+                    <!-- Notification Bell with Real Badge Count -->
+                    <div class="notifications-container" id="notificationsContainer">
+                        <button type="button" class="btn-topbar-icon" id="btnNotifications" title="Operational Alerts" aria-label="Notifications">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                            <span class="notification-badge" id="topbarNotificationBadge" style="display: none;">0</span>
+                        </button>
+                        <!-- Dropdown Popover -->
+                        <div class="notifications-popover" id="notificationsPopover" style="display: none;">
+                            <div class="popover-header">
+                                <span class="popover-title">Operational Risk Alerts</span>
+                                <span class="badge badge-teal" id="popoverBadgeCount">0 active</span>
+                            </div>
+                            <div class="popover-body" id="popoverAlertsList">
+                                <div class="popover-empty">All stock parameters within safe limits.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Topbar Actions (Date Filter / Refresh) -->
+                    {% block topbar_actions %}{% endblock %}
+
+                    <!-- User Profile & Logout -->
+                    <div class="topbar-user-section">
+                        {% if user %}
+                        <div class="user-chip">
+                            <div class="user-avatar-circle">{{ user.role[0] }}</div>
+                            <div class="user-details">
+                                <span class="user-display-name">{% if user_info %}{{ user_info.full_name }}{% else %}User #{{ user.id }}{% endif %}</span>
+                                <span class="user-role-badge">{{ user.role }}</span>
+                            </div>
+                        </div>
+                        <button id="btn-logout" class="btn-topbar-logout" title="Sign out">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                            <span>Logout</span>
+                        </button>
+                        {% else %}
+                        <a href="/login" class="btn btn-sm btn-primary">Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Page Content Workspace -->
+            <main class="app-workspace">
+                <div id="alert-container"></div>
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Enterprise Footer -->
+            <footer class="app-footer">
+                <div class="footer-wrap">
+                    <span class="footer-title">💊 <strong>RX Medical Store &bull; ExpiryGuard Rx</strong> &mdash; Cloud Batch-Level Inventory & FEFO Prevention</span>
+                    <span class="footer-credit">Engineered & Developed by <strong>VISHAL</strong></span>
+                    <span class="footer-tech">Azure SQL &bull; Blob Storage &bull; Cosmos DB &bull; Power BI</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Global Application Scripts -->
+    <script src="/static/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

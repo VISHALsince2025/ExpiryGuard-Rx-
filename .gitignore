@@ -1,0 +1,14 @@
+.env
+*.pem
+*.pfx
+local.settings.json
+__pycache__/
+.venv/
+*.pbix
+data/
+*.db
+*.db-wal
+*.db-shm
+evidence/
+*.pyc
+.pytest_cache/

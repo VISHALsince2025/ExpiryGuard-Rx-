@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}User Administration - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h2>Staff & User Access Management</h2>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Manage role assignments, account statuses, and account lockouts (Admin Only).</p>
+    </div>
+    <button id="btn-open-create-user" class="btn btn-primary">+ Create New User</button>
+</div>
+
+<div class="card">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Lockout State</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body">
+                <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading user directory...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Create User -->
+<div id="create-user-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Create New Staff Account</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="create-user-form">
+            <div class="form-group">
+                <label for="new-username">Username</label>
+                <input type="text" id="new-username" required minlength="3" maxlength="50" placeholder="e.g. pharmacist2">
+            </div>
+            <div class="form-group">
+                <label for="new-fullname">Full Name</label>
+                <input type="text" id="new-fullname" required maxlength="100" placeholder="e.g. Dr. Ramesh Kumar">
+            </div>
+            <div class="form-group">
+                <label for="new-email">Email Address</label>
+                <input type="email" id="new-email" required maxlength="120" placeholder="e.g. ramesh@rxmedical.com">
+            </div>
+            <div class="form-group">
+                <label for="new-password">Password (Minimum 8 Characters)</label>
+                <input type="password" id="new-password" required minlength="8" maxlength="128" placeholder="Enter secure password">
+            </div>
+            <div class="form-group">
+                <label for="new-role">Role Assignment</label>
+                <select id="new-role" required>
+                    <option value="1">1 - Admin (Full Access)</option>
+                    <option value="2">2 - Pharmacist (Dispensing & Stock Inward)</option>
+                    <option value="3" selected>3 - Counter (Sales & FEFO Dispensing)</option>
+                    <option value="4">4 - Purchase (Orders & Returns)</option>
+                    <option value="5">5 - Auditor (Read-Only Verification)</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit User Role / Status -->
+<div id="edit-user-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Modify User Permissions</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="edit-user-form">
+            <input type="hidden" id="edit-user-id">
+            <p style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                Editing account: <strong id="edit-user-username"></strong>
+            </p>
+            <div class="form-group">
+                <label for="edit-role-select">Role</label>
+                <select id="edit-role-select" required>
+                    <option value="1">1 - Admin</option>
+                    <option value="2">2 - Pharmacist</option>
+                    <option value="3">3 - Counter</option>
+                    <option value="4">4 - Purchase</option>
+                    <option value="5">5 - Auditor</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="edit-is-active"> Account Active
+                </label>
+            </div>
+            <div class="form-group" id="unlock-container" style="display: none;">
+                <label>
+                    <input type="checkbox" id="edit-unlock"> Clear Failed Attempts & Unlock Account
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/users.js"></script>
+{% endblock %}

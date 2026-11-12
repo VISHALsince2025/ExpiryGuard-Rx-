@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Medicines Catalog - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h2>Pharmaceutical Master Directory</h2>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Manage drug identities, dosage forms, schedule requirements, and safety reorder levels.</p>
+    </div>
+    {% if user and user.role in ['Admin', 'Pharmacist'] %}
+    <button id="btn-open-add-med" class="btn btn-primary">+ Add New Medicine</button>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <input type="text" id="search-med-box" placeholder="Search by brand name or generic composition (indexed)..." style="max-width: 450px;">
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Brand Name</th>
+                    <th>Generic Name</th>
+                    <th>Strength</th>
+                    <th>Dosage Form</th>
+                    <th>Category</th>
+                    <th>Stock on Hand</th>
+                    <th>Reorder Level</th>
+                    <th>Rx Required</th>
+                    <th>Status</th>
+                    {% if user and user.role in ['Admin', 'Pharmacist'] %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="med-list-body">
+                <tr><td colspan="11" style="text-align: center; color: #64748b;">Loading medicines catalog...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add Medicine -->
+<div id="add-med-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Add New Pharmaceutical Product</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="add-med-form">
+            <div class="form-group">
+                <label for="new-brand">Brand Name</label>
+                <input type="text" id="new-brand" required maxlength="120" placeholder="e.g. Dolo 650 or Augmentin">
+            </div>
+            <div class="form-group">
+                <label for="new-generic">Generic Formulation</label>
+                <input type="text" id="new-generic" required maxlength="120" placeholder="e.g. Paracetamol or Amoxicillin + Clavulanate">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="new-strength">Strength</label>
+                    <input type="text" id="new-strength" required maxlength="40" placeholder="e.g. 650 mg or 500/125 mg">
+                </div>
+                <div class="form-group">
+                    <label for="new-dosage">Dosage Form</label>
+                    <input type="text" id="new-dosage" required maxlength="30" placeholder="e.g. Tablet, Syrup, Injection">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="new-category">Category</label>
+                    <select id="new-category" required>
+                        <option value="">-- Select Category --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="new-reorder">Reorder Safety Level</label>
+                    <input type="number" id="new-reorder" min="0" value="20" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="new-rx"> Requires Doctor's Prescription (Schedule H / X)
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save to Catalog</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Medicine -->
+<div id="edit-med-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Edit Pharmaceutical Product</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="edit-med-form">
+            <input type="hidden" id="edit-med-id">
+            <div class="form-group">
+                <label for="edit-brand">Brand Name</label>
+                <input type="text" id="edit-brand" required maxlength="120">
+            </div>
+            <div class="form-group">
+                <label for="edit-generic">Generic Formulation</label>
+                <input type="text" id="edit-generic" required maxlength="120">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="edit-strength">Strength</label>
+                    <input type="text" id="edit-strength" required maxlength="40">
+                </div>
+                <div class="form-group">
+                    <label for="edit-dosage">Dosage Form</label>
+                    <input type="text" id="edit-dosage" required maxlength="30">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="edit-category">Category</label>
+                    <select id="edit-category" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-reorder">Reorder Safety Level</label>
+                    <input type="number" id="edit-reorder" min="0" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="edit-rx"> Requires Doctor's Prescription
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="edit-active"> Active Product (Uncheck to Soft-Delete)
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/medicines.js"></script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <h2>Compliance & Security Audit Trail</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Immutable, append-only security log recording every stock change, authentication attempt, price update, and regulatory action.
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <span>Filter Audit Events</span>
+    </div>
+    <form id="audit-filter-form" style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 0.75rem; align-items: end; margin-bottom: 1.25rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-table">Target Entity / Table</label>
+            <select id="filter-table">
+                <option value="">All Tables</option>
+                <option value="batches">batches</option>
+                <option value="sales">sales</option>
+                <option value="grn">grn</option>
+                <option value="supplier_returns">supplier_returns</option>
+                <option value="users">users</option>
+                <option value="prescription_register">prescription_register</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-action">Action Type</label>
+            <input type="text" id="filter-action" placeholder="e.g. BATCH_UPDATE or LOGIN_OK">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-from">From Date</label>
+            <input type="date" id="filter-from">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="filter-to">To Date</label>
+            <input type="date" id="filter-to">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Log #</th>
+                    <th>Timestamp (UTC)</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Record ID</th>
+                    <th>Old Value</th>
+                    <th>New Value</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody id="audit-table-body">
+                <tr><td colspan="9" style="text-align: center; color: #64748b;">Loading audit entries...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/audit.js"></script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Returns - ExpiryGuard Rx{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <h2>Wholesaler & Supplier Returns Ledger</h2>
+    <p style="color: var(--text-muted); font-size: 0.875rem;">
+        Staff raise returns for near-expiry or damaged lots; a pharmacist approves inside a transaction before stock is deducted; purchase officer records credit note recovery.
+    </p>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <span>Returns Register</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Return #</th>
+                    <th>Medicine</th>
+                    <th>Batch Lot</th>
+                    <th>Wholesaler</th>
+                    <th>Qty</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Raised By</th>
+                    <th>Approved By</th>
+                    <th>Credit Note</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="returns-table-body">
+                <tr><td colspan="11" style="text-align: center; color: #64748b;">Loading returns ledger...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Record Credit Note -->
+<div id="credit-note-modal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Record Wholesaler Credit Note</h3>
+            <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
+        </div>
+        <form id="credit-note-form">
+            <input type="hidden" id="credit-return-id">
+            <div class="form-group">
+                <label for="credit-note-no">Credit Note Reference Number</label>
+                <input type="text" id="credit-note-no" required maxlength="40" placeholder="e.g. CRN-2026-441">
+            </div>
+            <div class="form-group">
+                <label for="credit-amount">Credit Amount Recovered (₹)</label>
+                <input type="number" id="credit-amount" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Credit Note</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/returns.js"></script>
+{% endblock %}
