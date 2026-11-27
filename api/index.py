@@ -24,7 +24,8 @@ class VercelPathMiddleware:
             qs = scope.get("query_string", b"").decode("latin1", errors="ignore")
             params = urllib.parse.parse_qs(qs)
             
-            if "__path" in params and params["__path"]:
+            # 1. Primary: Extract route from Vercel rewrite parameter ':path*'
+            if "__path" in params and params["__path"] and params["__path"][0] != "$1":
                 target_route = params["__path"][0]
                 scope["path"] = "/" + target_route.lstrip("/")
                 scope["raw_path"] = scope["path"].encode("latin1")
@@ -32,7 +33,7 @@ class VercelPathMiddleware:
                 cleaned_params = {k: v for k, v in params.items() if k != "__path"}
                 scope["query_string"] = urllib.parse.urlencode(cleaned_params, doseq=True).encode("latin1")
             elif scope.get("path", "") in ("/api/index", "/api/index.py", "/api"):
-                # Check x-matched-path fallback
+                # 2. Fallback: Check x-matched-path or x-invoke-path
                 headers = dict(scope.get("headers", []))
                 matched = headers.get(b"x-matched-path") or headers.get(b"x-invoke-path")
                 if matched:
