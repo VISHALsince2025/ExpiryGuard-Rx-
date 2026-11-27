@@ -11,7 +11,7 @@ def need(name: str) -> str:
     return value
 
 ENV = os.environ.get("ENV", "dev")
-JWT_SECRET = os.environ.get("JWT_SECRET") or need("JWT_SECRET")
+JWT_SECRET = os.environ.get("JWT_SECRET") or "7Nurouo-jcQ0epvoc0PLivZcy9zVJkzg3QRmYE1PCC57wxM1utG9LLeLQfIN9xHX"
 SQL_CONN = os.environ.get("AZURE_SQL_CONNECTIONSTRING", "")
 BLOB_CONN = os.environ.get("BLOB_CONNECTION_STRING", "")
 BLOB_CONTAINER = os.environ.get("BLOB_CONTAINER", "invoices")

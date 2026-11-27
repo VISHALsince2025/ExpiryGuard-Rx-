@@ -1,0 +1,10 @@
+{
+  "forecast_date": "2026-10-11",
+  "model_type": "ExponentialSmoothing",
+  "medicines_evaluated": 0,
+  "avg_model_mae": 0.0,
+  "avg_baseline_mae": 0.0,
+  "status": "COMPLETED",
+  "id": "a691cd16-c6bf-4892-b43f-e95c52d74f9c",
+  "type": "forecast_run"
+}

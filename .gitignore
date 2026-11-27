@@ -4,11 +4,13 @@
 local.settings.json
 __pycache__/
 .venv/
+venv/
 *.pbix
-data/
-*.db
-*.db-wal
-*.db-shm
 evidence/
 *.pyc
 .pytest_cache/
+data/*.db-wal
+data/*.db-shm
+data/expiryguard_local.db
+data/expiryguard.db
+!data/seed.db

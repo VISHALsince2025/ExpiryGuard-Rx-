@@ -415,6 +415,14 @@ def _init_sqlite_schema(conn):
         (4, 'Purchase'),
         (5, 'Auditor');
 
+    -- Insert default users if empty
+    INSERT OR IGNORE INTO users (user_id, username, full_name, email, password_hash, role_id) VALUES
+        (1, 'admin', 'Dr. Vishal Admin', 'admin@rxmedical.com', '$2b$12$qvWsQObXWuteCYORw20wSO/YIawimXzbgyeJVrT7sAu.2X8skHE/m', 1),
+        (2, 'pharmacist1', 'Priya Sharma (R.Ph)', 'priya@rxmedical.com', '$2b$12$Sz3dBTHQapU1bDmdlKRhKOqxcyMC8EL5B.NUuy6djSLUWKQZntX4G', 2),
+        (3, 'counter1', 'Amit Kumar (Cashier)', 'amit@rxmedical.com', '$2b$12$2tKk2rMOrrgiWFYroNvQvepRjyR4kp9y0e/q2/RdWLaQ0sLfsW.VG', 3),
+        (4, 'purchase1', 'Rajesh Gupta (Purchase)', 'rajesh@rxmedical.com', '$2b$12$WsIiKb.k/tslAhbXaN035eh/GcUASE6.qZTBdGzMjnjRIG.ACiNx6', 4),
+        (5, 'auditor1', 'Sanjay Verma (Auditor)', 'sanjay@rxmedical.com', '$2b$12$tyjL2ejKoIYQTCj6h0wRxewZuurRwBmjbeLl2jcxRk5NKRLSMKbk6', 5);
+
     -- Create operational views
     DROP VIEW IF EXISTS v_expiry_status;
     CREATE VIEW v_expiry_status AS
@@ -507,7 +515,43 @@ def _init_sqlite_schema(conn):
     conn.commit()
 
 
-_local_db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "expiryguard_local.db")
+def _resolve_db_path():
+    """Resolves a writable database path, handling serverless read-only environments (like Vercel)."""
+    # Detect Vercel or AWS Lambda serverless read-only container
+    is_serverless = (
+        bool(os.environ.get("VERCEL"))
+        or bool(os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+        or not os.access(os.path.dirname(os.path.dirname(__file__)), os.W_OK)
+    )
+
+    if is_serverless:
+        target_path = "/tmp/expiryguard_local.db"
+        if not os.path.exists(target_path) or os.path.getsize(target_path) == 0:
+            import shutil
+            candidates = [
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "seed.db"),
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "expiryguard_local.db"),
+            ]
+            for c in candidates:
+                if os.path.exists(c) and os.path.getsize(c) > 0:
+                    try:
+                        shutil.copyfile(c, target_path)
+                        break
+                    except Exception:
+                        pass
+        return target_path
+
+    # Standard local environment
+    base_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+    os.makedirs(base_data_dir, exist_ok=True)
+    db_file = os.path.join(base_data_dir, "expiryguard_local.db")
+    if not os.path.exists(db_file) or os.path.getsize(db_file) == 0:
+        seed_file = os.path.join(base_data_dir, "seed.db")
+        if os.path.exists(seed_file) and os.path.getsize(seed_file) > 0:
+            import shutil
+            shutil.copyfile(seed_file, db_file)
+    return db_file
+
 
 def get_connection():
     """
@@ -526,10 +570,13 @@ def get_connection():
             else:
                 raise e
 
-    # Fallback to local SQLite database
-    os.makedirs(os.path.dirname(_local_db_path), exist_ok=True)
-    raw_conn = sqlite3.connect(_local_db_path, timeout=30, check_same_thread=False)
-    raw_conn.execute("PRAGMA journal_mode = WAL;")
+    # Fallback to local SQLite database (serverless / writable safe)
+    db_path = _resolve_db_path()
+    raw_conn = sqlite3.connect(db_path, timeout=30, check_same_thread=False)
+    try:
+        raw_conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception:
+        raw_conn.execute("PRAGMA journal_mode = DELETE;")
     raw_conn.execute("PRAGMA busy_timeout = 10000;")
     raw_conn.execute("PRAGMA foreign_keys = ON;")
     _init_sqlite_schema(raw_conn)
