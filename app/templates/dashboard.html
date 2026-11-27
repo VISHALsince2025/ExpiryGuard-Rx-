@@ -94,6 +94,12 @@
             </svg>
             <span>AI Camera &amp; Strip OCR</span>
         </button>
+        <button type="button" class="btn-ai-action" id="btnOpenClinicalModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+            </svg>
+            <span>AI Clinical Safety &amp; DDI</span>
+        </button>
     </div>
 </div>
 
@@ -530,12 +536,22 @@
             <button type="button" class="btn-modal-close" data-close="modalVoiceEntry">&times;</button>
         </div>
         <div class="ai-modal-body">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main);">Recognition Language:</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main);">Speech Language:</label>
                 <select id="voiceLanguageSelect" class="form-select" style="padding:0.35rem 0.75rem; border-radius:6px; border:1px solid var(--border-color); font-size:0.85rem;">
                     <option value="en-IN" selected>English (India)</option>
                     <option value="hi-IN">Hindi / Hinglish (हिंदी)</option>
                 </select>
+            </div>
+
+            <!-- Demo Preset Pills for Instant Presentation Demonstration -->
+            <div style="margin-bottom:0.75rem;">
+                <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Quick Demo Voice Prompts (Click to test):</span>
+                <div class="sample-pills-container">
+                    <button type="button" class="sample-pill btn-demo-voice" data-text="Add 50 strips of Dolo 650, batch ABC123, expiry March 2027, purchase price 18 rupees, selling price 25 rupees">🎙️ Dolo 650 (English)</button>
+                    <button type="button" class="sample-pill btn-demo-voice" data-text="Augmentin 625 ke 30 strips add karo, batch AUG990, expiry December 2026, khareed 120 rupaye aur bech 160 rupaye">🎙️ Augmentin 625 (Hindi)</button>
+                    <button type="button" class="sample-pill btn-demo-voice" data-text="Enter 40 tablets of Azithromycin 500, batch AZ-402, exp 11/2027, cost price 65 rs, selling price 95 rs">🎙️ Azithromycin 500</button>
+                </div>
             </div>
 
             <div class="voice-mic-container">
@@ -546,33 +562,67 @@
                         <line x1="12" x2="12" y1="19" y2="22"></line>
                     </svg>
                 </button>
-                <div class="voice-status-text" id="voiceStatusText">Tap microphone to speak details</div>
+                <div class="voice-status-text" id="voiceStatusText">Tap microphone to speak medicine details</div>
             </div>
 
-            <div style="margin-top:1rem;">
+            <div style="margin-top:0.75rem;">
                 <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.3rem;">Spoken Transcript / Voice Command:</label>
-                <textarea id="voiceTranscriptInput" rows="3" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="e.g. Add 50 strips of Dolo 650, batch ABC123, expiry March 2027, purchase price 18 rupees, selling price 25 rupees"></textarea>
-                <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
+                <textarea id="voiceTranscriptInput" rows="2" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="e.g. Add 50 strips of Dolo 650, batch ABC123, expiry March 2027, purchase price 18 rupees, selling price 25 rupees"></textarea>
+                <div style="display:flex; justify-content:flex-end; margin-top:0.4rem;">
                     <button type="button" class="btn btn-sm btn-primary" id="btnProcessVoice">Extract &amp; Validate Fields →</button>
                 </div>
             </div>
 
-            <!-- Extracted Draft Review Box -->
+            <!-- Extracted Draft Review & Save Box -->
             <div id="voiceExtractedResult" class="extracted-result-box" style="display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
-                    <strong style="color:var(--text-main); font-size:0.9rem;">Review Extracted Fields</strong>
+                    <strong style="color:var(--text-main); font-size:0.9rem;">Review &amp; Edit Before Saving to Database</strong>
                     <span id="voiceConfidenceBadge" class="badge badge-green">100% Match</span>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; font-size:0.82rem;">
-                    <div><strong>Medicine:</strong> <span id="vResMed">-</span></div>
-                    <div><strong>Quantity:</strong> <span id="vResQty">-</span></div>
-                    <div><strong>Batch No:</strong> <span id="vResBatch">-</span></div>
-                    <div><strong>Expiry Date:</strong> <span id="vResExp">-</span></div>
-                    <div><strong>Purchase Cost:</strong> <span id="vResCost">-</span></div>
-                    <div><strong>Selling Price:</strong> <span id="vResPrice">-</span></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.82rem;">
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Brand Name:</label>
+                        <input type="text" id="vInpBrand" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Generic Name:</label>
+                        <input type="text" id="vInpGeneric" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Batch Lot #:</label>
+                        <input type="text" id="vInpBatch" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Expiry Date:</label>
+                        <input type="date" id="vInpExp" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Quantity (Units):</label>
+                        <input type="number" id="vInpQty" min="1" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Purchase Cost (₹):</label>
+                        <input type="number" id="vInpCost" step="0.5" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Selling Price (₹):</label>
+                        <input type="number" id="vInpPrice" step="0.5" class="form-input" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-muted);">Dosage Form:</label>
+                        <select id="vInpDosage" class="form-select" style="width:100%; padding:0.35rem 0.5rem; font-size:0.82rem; border:1px solid var(--border-color); border-radius:4px;">
+                            <option value="Tablet">Tablet</option>
+                            <option value="Capsule">Capsule</option>
+                            <option value="Syrup">Syrup</option>
+                            <option value="Injection">Injection</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="margin-top:0.85rem; text-align:right;">
-                    <button type="button" class="btn btn-sm btn-primary" id="btnConfirmVoiceSave">✓ Confirm &amp; Add to Stock</button>
+                <div style="margin-top:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+                    <span id="vSaveStatus" style="font-size:0.8rem; font-weight:600;"></span>
+                    <button type="button" class="btn btn-sm btn-primary" id="btnConfirmVoiceSave" style="background:#0D9488; border-color:#0D9488;">
+                        💾 Save to Database Now
+                    </button>
                 </div>
             </div>
         </div>
@@ -592,10 +642,35 @@
             <button type="button" class="btn-modal-close" data-close="modalBarcodeScanner">&times;</button>
         </div>
         <div class="ai-modal-body">
-            <div style="margin-bottom:1.25rem;">
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Scan or Enter Barcode / Medicine ID:</label>
+            <!-- Camera Viewfinder Toggle -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main);">Live Camera Scanner:</label>
+                <button type="button" class="btn btn-xs btn-secondary" id="btnToggleQRCamera">📷 Start Live Camera Scan</button>
+            </div>
+
+            <!-- Live Camera Viewfinder -->
+            <div class="camera-stream-wrapper" id="qrCameraWrapper" style="display:none; margin-bottom:0.75rem;">
+                <video id="qrVideoFeed" playsinline autoplay muted></video>
+                <div class="camera-scanner-laser"></div>
+                <div style="position:absolute; bottom:8px; right:8px;">
+                    <button type="button" class="btn btn-xs btn-secondary" id="btnCloseQRCamera" style="background:rgba(0,0,0,0.6); color:#fff; border:none;">✕ Close</button>
+                </div>
+            </div>
+
+            <!-- Demo QR Presets -->
+            <div style="margin-bottom:0.75rem;">
+                <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Quick Demo QR Payloads:</span>
+                <div class="sample-pills-container">
+                    <button type="button" class="sample-pill btn-demo-qr" data-code='{"brand_name":"Paracetamol 650","generic_name":"Paracetamol","strength":"650 mg","dosage_form":"Tablet","category_id":1,"batch_number":"PCM-2026","expiry_date":"2027-11-30","quantity":100,"cost_price":14.50,"selling_price":22.00}'>📦 Paracetamol QR</button>
+                    <button type="button" class="sample-pill btn-demo-qr" data-code="Brand: Amoxicillin 500; Generic: Amoxicillin; Strength: 500 mg; Batch: AMX-55; Exp: 2027-08-31; Qty: 60; Cost: 45.0; Price: 68.0">📦 Amoxicillin QR</button>
+                    <button type="button" class="sample-pill btn-demo-qr" data-code="1">🔍 Lookup Med ID #1</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Scan with 1D/2D reader or enter code:</label>
                 <div style="display:flex; gap:0.5rem;">
-                    <input type="text" id="barcodeCodeInput" class="form-input" style="flex:1; padding:0.65rem 0.85rem; border:1px solid var(--border-color); border-radius:8px;" placeholder="Scan with 1D/2D reader or type code e.g. 1">
+                    <input type="text" id="barcodeCodeInput" class="form-input" style="flex:1; padding:0.65rem 0.85rem; border:1px solid var(--border-color); border-radius:8px;" placeholder="Scan barcode/QR or type e.g. 1">
                     <button type="button" class="btn btn-primary" id="btnLookupBarcode">Scan / Lookup</button>
                 </div>
             </div>
@@ -614,22 +689,108 @@
         <div class="ai-modal-header">
             <h3>
                 <span>📷</span>
-                <span>AI Optical Packaging &amp; Invoice OCR</span>
+                <span>AI Camera &amp; Packaging Optical OCR</span>
             </h3>
             <button type="button" class="btn-modal-close" data-close="modalOCRScanner">&times;</button>
         </div>
         <div class="ai-modal-body">
-            <div style="margin-bottom:1.25rem;">
-                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Upload Medicine Strip / Packaging Photo or Paste Text:</label>
-                <input type="file" id="ocrFileInput" accept="image/*,.pdf" style="margin-bottom:0.75rem; width:100%; font-size:0.85rem;">
-                <textarea id="ocrRawTextInput" rows="3" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="Or paste raw text from invoice / camera e.g. DOLO 650 Tablets B.No: DLO2025 EXP: 12/2027 M.R.P. Rs. 34.50"></textarea>
-                <div style="display:flex; justify-content:flex-end; margin-top:0.5rem;">
+            <!-- Camera Viewfinder Toggle -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main);">Live Camera Packaging Capture:</label>
+                <button type="button" class="btn btn-xs btn-secondary" id="btnToggleOCRCamera">📸 Open Webcam / Camera</button>
+            </div>
+
+            <!-- Live Camera Viewfinder with Snap Photo Button -->
+            <div class="camera-stream-wrapper" id="ocrCameraWrapper" style="display:none; margin-bottom:0.75rem;">
+                <video id="ocrVideoFeed" playsinline autoplay muted></video>
+                <div class="camera-scanner-laser"></div>
+                <div style="padding:0.6rem; background:rgba(15,23,42,0.85); display:flex; justify-content:center; gap:0.6rem;">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnSnapPhoto" style="background:#0D9488; border-color:#0D9488;">
+                        📸 Click Pic / Capture Frame
+                    </button>
+                    <button type="button" class="btn btn-xs btn-secondary" id="btnCloseOCRCamera">Cancel Camera</button>
+                </div>
+            </div>
+
+            <!-- Snapshot Photo Preview -->
+            <div id="snapshotPreviewWrapper" style="display:none; margin-bottom:0.75rem; text-align:center;">
+                <img id="snapshotImgPreview" alt="Captured Packaging" style="max-height:160px; border-radius:6px; border:2px solid var(--teal-primary); box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">✓ Photo Captured &bull; Running Optical Analysis...</div>
+            </div>
+
+            <!-- Demo Packaging Presets -->
+            <div style="margin-bottom:0.75rem;">
+                <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Quick Demo Packaging Strips:</span>
+                <div class="sample-pills-container">
+                    <button type="button" class="sample-pill btn-demo-ocr" data-text="DOLO 650 Tablets&#10;Paracetamol Tablets IP 650 mg&#10;B.No: DLO2025&#10;MFG: 01/2025&#10;EXP: 12/2027&#10;M.R.P. Rs. 34.50&#10;Micro Labs Limited">📷 Dolo 650 Strip</button>
+                    <button type="button" class="sample-pill btn-demo-ocr" data-text="AUGMENTIN 625 Duo&#10;Amoxicillin and Potassium Clavulanate Tablets IP&#10;Batch No: AUG-8801&#10;MFD: 02/2025&#10;EXPIRY: 01/2027&#10;Max Retail Price Rs. 201.50&#10;GlaxoSmithKline Pharmaceuticals">📷 Augmentin 625 Duo</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Upload Medicine Photo or Paste Text:</label>
+                <input type="file" id="ocrFileInput" accept="image/*,.pdf" style="margin-bottom:0.5rem; width:100%; font-size:0.85rem;">
+                <textarea id="ocrRawTextInput" rows="2" style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem; font-size:0.88rem; font-family:inherit;" placeholder="Or paste raw text from invoice/strip e.g. DOLO 650 Tablets B.No: DLO2025 EXP: 12/2027 M.R.P. Rs. 34.50"></textarea>
+                <div style="display:flex; justify-content:flex-end; margin-top:0.4rem;">
                     <button type="button" class="btn btn-primary" id="btnProcessOCR">Run AI OCR Extraction →</button>
                 </div>
             </div>
 
             <!-- OCR Extraction Result Display -->
             <div id="ocrResultContainer" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================================================
+     AI MODAL 4: CLINICAL DRUG SAFETY & INTERACTION CHECKER MODAL
+     ========================================================================== -->
+<div class="ai-modal-overlay" id="modalClinicalChecker">
+    <div class="ai-modal-card" style="max-width: 680px;">
+        <div class="ai-modal-header" style="background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);">
+            <h3>
+                <span>🩺</span>
+                <span>AI Clinical Pharmacopeia &amp; Drug Interaction Engine</span>
+            </h3>
+            <button type="button" class="btn-modal-close" data-close="modalClinicalChecker">&times;</button>
+        </div>
+        <div class="ai-modal-body">
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+                Cross-analyze multiple pharmaceutical formulations for severe adverse interactions, organ toxicity, and contraindications.
+            </p>
+
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.4rem;">Select or Search Medicines to Check:</label>
+                <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                    <select id="clinicalMedSelect" class="form-select" style="flex:1; padding:0.5rem; font-size:0.85rem;">
+                        <option value="">-- Choose drug to add to safety check --</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary" id="btnAddClinicalDrug">+ Add Drug</button>
+                </div>
+                
+                <!-- Selected Drug Chips -->
+                <div class="clinical-tag-cloud" id="selectedClinicalChips"></div>
+            </div>
+
+            <!-- Quick Demo Interaction Presets -->
+            <div style="margin-bottom:1rem;">
+                <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Clinical Demo Presets (1-Click Analysis):</span>
+                <div class="sample-pills-container">
+                    <button type="button" class="sample-pill btn-demo-clinical" data-meds="Aspirin,Warfarin" style="color:#DC2626; border-color:#FCA5A5; background:#FEF2F2;">⚠️ Aspirin + Warfarin (Severe Bleeding)</button>
+                    <button type="button" class="sample-pill btn-demo-clinical" data-meds="Atorvastatin,Azithromycin" style="color:#D97706; border-color:#FCD34D; background:#FFFBEB;">⚡ Atorvastatin + Azithromycin (Toxicity)</button>
+                    <button type="button" class="sample-pill btn-demo-clinical" data-meds="Paracetamol,Amoxicillin" style="color:#059669; border-color:#A7F3D0; background:#ECFDF5;">✓ Paracetamol + Amoxicillin (Safe)</button>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding:0.6rem 0.75rem; background:#F8FAFC; border-radius:6px; border:1px solid var(--border-color);">
+                <label style="font-size:0.82rem; font-weight:600; display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                    <input type="checkbox" id="chkClinicalPregnant"> Patient is Pregnant (Evaluate Teratogenicity)
+                </label>
+                <button type="button" class="btn btn-primary" id="btnRunClinicalAnalysis">Run Pharmacological Check 🩺</button>
+            </div>
+
+            <!-- Clinical Report Output Box -->
+            <div id="clinicalOutputContainer" style="display:none;"></div>
         </div>
     </div>
 </div>
@@ -640,5 +801,6 @@
     // Embed verified server-side dashboard data directly to prevent duplicate initial network fetch
     window.__DASHBOARD_DATA__ = {{ dashboard | tojson }};
 </script>
+<script src="/static/scanning.js"></script>
 <script src="/static/dashboard.js"></script>
 {% endblock %}

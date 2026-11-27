@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     async function init() {
+        window.loadMedicines = loadMedicines;
         await loadCategories();
         await loadMedicines();
 
@@ -149,9 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${m.dosage_form}</td>
                 <td>${m.category_name}</td>
                 <td>
-                    <span class="badge ${m.total_stock > 0 ? 'badge-green' : 'badge-red'}">
+                    <span class="badge ${m.total_stock > m.reorder_level ? 'badge-green' : (m.total_stock > 0 ? 'badge-amber' : 'badge-red')}">
                         ${m.total_stock} units
                     </span>
+                    ${m.total_stock <= m.reorder_level ? '<span class="badge badge-amber" style="margin-left:4px; font-size:0.7rem;">Low</span>' : ''}
                 </td>
                 <td>${m.reorder_level}</td>
                 <td>
@@ -161,7 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${m.is_active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-expired">Disabled</span>'}
                 </td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-secondary btn-edit-med" data-id="${m.medicine_id}">Edit</button>
+                    <div style="display:flex; gap:0.35rem; align-items:center;">
+                        <button type="button" class="btn btn-sm btn-secondary btn-edit-med" data-id="${m.medicine_id}">Edit</button>
+                        <button type="button" class="btn btn-sm btn-secondary btn-qr-label" data-id="${m.medicine_id}" title="Generate Thermal Scannable QR Label">🏷️ QR</button>
+                        ${m.total_stock <= m.reorder_level ? `<button type="button" class="btn btn-sm btn-primary btn-quick-reorder" data-id="${m.medicine_id}" data-name="${escapeHtml(m.brand_name)}" style="background:#0D9488; padding:0.25rem 0.5rem; font-size:0.75rem;">⚡ Reorder</button>` : ''}
+                    </div>
                 </td>
             `;
             medTableBody.appendChild(tr);
@@ -173,6 +179,112 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = parseInt(btn.dataset.id);
                 const med = medicinesCache.find(x => x.medicine_id === id);
                 if (med) openEditModal(med);
+            });
+        });
+
+        // Wire QR Label buttons
+        const modalQRLabel = document.getElementById('modalQRLabel');
+        const qrLabelContainer = document.getElementById('qrLabelContainer');
+        const btnPrintQR = document.getElementById('btnPrintQRLabel');
+
+        if (btnPrintQR) {
+            btnPrintQR.onclick = () => window.print();
+        }
+
+        document.querySelectorAll('.btn-qr-label').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.id);
+                const med = medicinesCache.find(x => x.medicine_id === id);
+                if (!med) return;
+
+                const qrPayload = JSON.stringify({
+                    brand_name: med.brand_name,
+                    generic_name: med.generic_name,
+                    strength: med.strength,
+                    dosage_form: med.dosage_form,
+                    category_id: med.category_id || 1,
+                    batch_number: `LOT-${med.medicine_id}X`,
+                    expiry_date: "2027-12-31",
+                    quantity: 50,
+                    cost_price: 20.0,
+                    selling_price: 35.0
+                });
+
+                const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrPayload)}`;
+
+                if (qrLabelContainer) {
+                    qrLabelContainer.innerHTML = `
+                        <div class="thermal-label-container">
+                            <div class="thermal-label-header">
+                                <strong style="font-size:0.95rem; letter-spacing:0.5px;">RX MEDICAL STORE</strong>
+                                <div style="font-size:0.65rem; color:#64748B;">BATCH INVENTORY LABEL &bull; DL: UP-2024-8841</div>
+                            </div>
+                            <div class="thermal-label-body">
+                                <img src="${qrImgUrl}" alt="Medicine QR" class="thermal-label-qr">
+                                <div class="thermal-label-meta">
+                                    <div style="font-size:0.95rem; font-weight:bold; color:#0F172A;">${escapeHtml(med.brand_name)}</div>
+                                    <div style="font-size:0.75rem; color:#475569;">${escapeHtml(med.generic_name)}</div>
+                                    <div style="margin-top:4px;"><strong>Strength:</strong> ${escapeHtml(med.strength)}</div>
+                                    <div><strong>Dosage:</strong> ${escapeHtml(med.dosage_form)}</div>
+                                    <div><strong>Lot:</strong> <code>LOT-${med.medicine_id}X</code></div>
+                                    <div><strong>Exp Date:</strong> 12/2027</div>
+                                    <div><strong>Statutory:</strong> ${med.requires_prescription ? 'Schedule H (Rx)' : 'OTC Drug'}</div>
+                                </div>
+                            </div>
+                            <div style="border-top:1px dashed #94A3B8; margin-top:8px; padding-top:4px; font-size:0.65rem; text-align:center; color:#64748B;">
+                                SCAN WITH AI QR READER TO AUTO-INWARD INTO PHARMACY DATABASE
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (modalQRLabel) modalQRLabel.classList.add('active');
+            });
+        });
+
+        // Wire 1-Click Quick Reorder
+        document.querySelectorAll('.btn-quick-reorder').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = parseInt(btn.dataset.id);
+                const name = btn.dataset.name;
+                const confirmReorder = confirm(`Generate instant stock reorder of 50 units for '${name}'?`);
+                if (!confirmReorder) return;
+
+                btn.disabled = true;
+                btn.textContent = 'Ordering...';
+
+                try {
+                    const res = await fetch('/api/scanning/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            brand_name: name,
+                            generic_name: name,
+                            strength: "Standard",
+                            dosage_form: "Tablet",
+                            category_id: 1,
+                            batch_number: `REORD-${Date.now().toString().slice(-4)}`,
+                            expiry_date: "2028-06-30",
+                            quantity: 50,
+                            cost_price: 18.0,
+                            selling_price: 28.0,
+                            supplier_id: 1,
+                            source: 'QUICK_REORDER'
+                        })
+                    });
+                    const json = await res.json();
+                    if (res.ok && json.status === 'success') {
+                        showAlert(`Reordered 50 units of ${name}! Total stock: ${json.data.total_available_stock} units.`, 'success');
+                        loadMedicines();
+                    } else {
+                        showAlert('Reorder failed: ' + (json.detail || json.message), 'danger');
+                    }
+                } catch (e) {
+                    showAlert('Error placing quick reorder: ' + e.message, 'danger');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '⚡ Reorder';
+                }
             });
         });
     }

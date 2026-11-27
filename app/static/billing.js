@@ -163,6 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
         billUnitsEl.textContent = totalUnits;
         billTotalEl.textContent = '(Calculated upon FEFO batch selection)';
 
+        // Auto check clinical drug interactions when cart has multiple items
+        checkCartClinicalInteractions();
+
         // Wire quantity change events
         document.querySelectorAll('.cart-qty-input').forEach(input => {
             input.addEventListener('change', (e) => {
@@ -262,50 +265,166 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function checkCartClinicalInteractions() {
+        const bar = document.getElementById('cartClinicalSafetyBar');
+        if (!bar) return;
+
+        if (cart.length < 2) {
+            bar.style.display = 'none';
+            return;
+        }
+
+        try {
+            const medIds = cart.map(i => i.medicine_id);
+            const res = await fetch('/api/clinical/check-interactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ medicine_ids: medIds })
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            bar.style.display = 'block';
+
+            const dot = document.getElementById('cartSafetyDot');
+            const label = document.getElementById('cartSafetyLabel');
+            const badge = document.getElementById('cartSafetyBadge');
+            const desc = document.getElementById('cartSafetyDesc');
+
+            if (data.overall_risk === 'CRITICAL_WARNING') {
+                dot.style.background = '#DC2626';
+                label.textContent = 'CRITICAL ADVERSE INTERACTION DETECTED';
+                label.style.color = '#DC2626';
+                badge.className = 'badge badge-expired';
+                badge.textContent = 'HAZARD';
+                desc.innerHTML = `<strong style="color:#DC2626;">Contraindicated:</strong> ${escapeHtml(data.clinical_summary)}`;
+            } else if (data.overall_risk === 'MODERATE_CAUTION') {
+                dot.style.background = '#D97706';
+                label.textContent = 'Moderate Clinical Precaution Advised';
+                label.style.color = '#D97706';
+                badge.className = 'badge badge-amber';
+                badge.textContent = 'CAUTION';
+                desc.textContent = data.clinical_summary;
+            } else {
+                dot.style.background = '#10B981';
+                label.textContent = 'AI Clinical Safety: Verified';
+                label.style.color = '#0F172A';
+                badge.className = 'badge badge-green';
+                badge.textContent = 'SAFE';
+                desc.textContent = 'No adverse pharmacological contraindications found in cart.';
+            }
+        } catch (e) {
+            console.error("Cart interaction check failed", e);
+        }
+    }
+
+    // Print Receipt Event
+    const printReceiptBtn = document.getElementById('btn-print-receipt');
+    if (printReceiptBtn) {
+        printReceiptBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
     function renderReceipt(bill) {
+        const subtotal = bill.total_amount / 1.12;
+        const gst = bill.total_amount - subtotal;
+        const cgst = gst / 2;
+        const sgst = gst / 2;
+
+        const qrPayload = JSON.stringify({
+            bill_id: bill.sale_id,
+            date: bill.sale_time.slice(0, 10),
+            amount: bill.total_amount,
+            units: bill.total_units,
+            rx_pharmacy: "RX Medical Store"
+        });
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrPayload)}`;
+
         receiptContent.innerHTML = `
-            <div class="receipt">
-                <div class="receipt-header">
-                    <h3>EXPIRYGUARD RX PHARMACY</h3>
-                    <p>Bill #${bill.sale_id} | Date: ${bill.sale_time.slice(0, 19)}</p>
-                    <p>Cashier: ${bill.cashier_name} | Payment: <strong>${bill.payment_mode}</strong></p>
-                    ${bill.customer_name ? `<p>Customer: ${bill.customer_name}</p>` : ''}
+            <div class="tax-invoice-container">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
+                    <div>
+                        <div class="invoice-brand-title">RX MEDICAL STORE &amp; HEALTHCARE</div>
+                        <div class="invoice-reg-meta">
+                            DL No: <strong>DL-20B/21B-UP-2024-8841</strong> &bull; GSTIN: <strong>09AAAAA0000A1Z5</strong><br>
+                            Station Road, Medical Enclave, Varanasi, UP - 221002<br>
+                            Contact: +91 98765 43210 &bull; Licensed Pharmacy Retailer
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <img src="${qrUrl}" alt="Verify QR" style="width:75px; height:75px; border:1px solid #CBD5E1; padding:2px; background:#fff;" onerror="this.style.display='none'">
+                        <div style="font-size:0.65rem; color:#64748B;">Digital Verify QR</div>
+                    </div>
                 </div>
-                <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 0.5rem 0;">
-                <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+
+                <div class="invoice-divider"></div>
+
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.5rem;">
+                    <div>
+                        <strong>Tax Invoice / Retail Cash Memo:</strong> #${bill.sale_id}<br>
+                        <strong>Date &amp; Time:</strong> ${bill.sale_time.slice(0, 19)} (IST)<br>
+                        <strong>Cashier:</strong> ${escapeHtml(bill.cashier_name)}
+                    </div>
+                    <div style="text-align:right;">
+                        <strong>Customer:</strong> ${escapeHtml(bill.customer_name || 'Walk-in Patient')}<br>
+                        <strong>Payment Mode:</strong> <span class="badge badge-teal">${bill.payment_mode}</span><br>
+                        <strong>Dispensing Engine:</strong> First Expiry, First Out (FEFO)
+                    </div>
+                </div>
+
+                <table class="invoice-table">
                     <thead>
-                        <tr style="text-align: left; border-bottom: 1px solid #cbd5e1;">
-                            <th>Item</th>
-                            <th>Batch</th>
-                            <th>Exp</th>
+                        <tr>
+                            <th>#</th>
+                            <th>Medicine &amp; Strength</th>
+                            <th>Batch Lot</th>
+                            <th>Expiry</th>
                             <th style="text-align:right;">Qty</th>
-                            <th style="text-align:right;">Rate</th>
-                            <th style="text-align:right;">Total</th>
+                            <th style="text-align:right;">MRP (₹)</th>
+                            <th style="text-align:right;">Amount (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${bill.items.map(it => `
+                        ${bill.items.map((it, idx) => `
                             <tr>
-                                <td>${it.brand_name}</td>
-                                <td><span class="badge badge-neutral">${it.batch_number}</span></td>
-                                <td>${it.expiry_date}</td>
-                                <td style="text-align:right;">${it.quantity}</td>
+                                <td>${idx + 1}</td>
+                                <td><strong>${escapeHtml(it.brand_name)}</strong></td>
+                                <td><code>${escapeHtml(it.batch_number)}</code></td>
+                                <td style="font-size:0.75rem;">${it.expiry_date}</td>
+                                <td style="text-align:right; font-weight:700;">${it.quantity}</td>
                                 <td style="text-align:right;">₹${it.unit_price.toFixed(2)}</td>
-                                <td style="text-align:right;">₹${it.line_total.toFixed(2)}</td>
+                                <td style="text-align:right; font-weight:700;">₹${it.line_total.toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-                <div class="receipt-total" style="display: flex; justify-content: space-between; margin-top: 0.75rem;">
-                    <span>Total Units: ${bill.total_units}</span>
-                    <span style="font-size: 1.1rem; color: #0284c7;">Grand Total: ₹${bill.total_amount.toFixed(2)}</span>
+
+                <div class="invoice-divider"></div>
+
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.75rem;">
+                    <div style="color:#64748B; font-size:0.75rem;">
+                        <div>Total Units Dispensed: <strong>${bill.total_units} units</strong></div>
+                        <div>CGST (6%): ₹${cgst.toFixed(2)} | SGST (6%): ₹${sgst.toFixed(2)}</div>
+                        <div style="margin-top:0.25rem;">* All prices inclusive of statutory applicable GST.</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.85rem; color:#64748B;">Net Subtotal: ₹${subtotal.toFixed(2)}</div>
+                        <div style="font-size:1.25rem; font-weight:800; color:var(--teal-primary); margin-top:2px;">
+                            Total Paid: ₹${bill.total_amount.toFixed(2)}
+                        </div>
+                    </div>
                 </div>
-                ${bill.prescriptions.length > 0 ? `
-                    <div style="margin-top: 0.75rem; font-size: 0.75rem; background: #fffbeb; padding: 0.5rem; border: 1px solid #fde68a;">
-                        <strong>Prescription Register Recorded:</strong><br>
-                        ${bill.prescriptions.map(p => `Patient: ${p.patient_name} | Doctor: ${p.prescriber_name} (Reg: ${p.prescriber_reg_no})`).join('<br>')}
+
+                ${bill.prescriptions && bill.prescriptions.length > 0 ? `
+                    <div style="margin-top: 0.5rem; font-size: 0.75rem; background: #FFFBEB; padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #FDE68A;">
+                        <strong style="color:#B45309;">Statutory Schedule H / Rx Compliance Verified:</strong><br>
+                        ${bill.prescriptions.map(p => `Patient: <strong>${escapeHtml(p.patient_name)}</strong> &bull; Prescriber: <strong>${escapeHtml(p.prescriber_name)}</strong> (Reg: ${escapeHtml(p.prescriber_reg_no)})`).join('<br>')}
                     </div>
                 ` : ''}
+
+                <div style="text-align:center; font-size:0.72rem; color:#94A3B8; margin-top:0.75rem; border-top:1px dashed #E2E8F0; padding-top:0.5rem;">
+                    Thank you for choosing RX Medical Store! For queries, visit www.rxmedical.local &bull; Computer Generated Invoice
+                </div>
             </div>
         `;
         receiptModal.classList.add('active');

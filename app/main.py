@@ -8,7 +8,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import ENV
 from app.routers import (
     auth, users, medicines, suppliers, grn, sales,
-    returns, alerts, reports, audit_view, pages, scanning
+    returns, alerts, reports, audit_view, pages, scanning, clinical
 )
 
 # Rate limiter setup (protects login from brute-force attempts)
@@ -44,7 +44,7 @@ async def security_headers(request: Request, call_next):
     return resp
 
 # Register application routers
-for r in (auth, users, medicines, suppliers, grn, sales, returns, alerts, reports, audit_view, pages, scanning):
+for r in (auth, users, medicines, suppliers, grn, sales, returns, alerts, reports, audit_view, pages, scanning, clinical):
     app.include_router(r.router)
 
 @app.get("/health", tags=["Health"])

@@ -24,6 +24,20 @@
             <div id="med-search-results" style="position: absolute; width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-top: none; z-index: 50; max-height: 240px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: var(--shadow);"></div>
         </div>
 
+        <!-- Real-Time AI Clinical Safety & Drug Interaction Alert Bar -->
+        <div id="cartClinicalSafetyBar" style="display:none; margin-bottom: 1rem; padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid #E2E8F0; background: #F8FAFC;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="cartSafetyTitle" style="font-size:0.82rem; font-weight:700; display:flex; align-items:center; gap:0.4rem;">
+                    <span id="cartSafetyDot" style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+                    <span id="cartSafetyLabel">AI Clinical Safety: Verified</span>
+                </span>
+                <span id="cartSafetyBadge" class="badge badge-green">SAFE</span>
+            </div>
+            <div id="cartSafetyDesc" style="font-size:0.78rem; color:#475569; margin-top:0.25rem;">
+                No adverse drug-drug contraindications detected in current dispensing cart.
+            </div>
+        </div>
+
         <div style="overflow-x: auto; margin-bottom: 1rem;">
             <table class="data-table">
                 <thead>
@@ -117,8 +131,11 @@
             <button type="button" class="btn btn-sm btn-secondary modal-close-btn">&times;</button>
         </div>
         <div id="receipt-content"></div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
             <button type="button" class="btn btn-secondary modal-close-btn">Close</button>
+            <button type="button" class="btn btn-primary" id="btn-print-receipt" style="background:#0D9488; border-color:#0D9488;">
+                🖨️ Print / Download Tax Invoice
+            </button>
         </div>
     </div>
 </div>

@@ -229,6 +229,10 @@ class SQLiteCursorWrapper:
         rows = self._cur.fetchall()
         return [RowAdapter(self.description, r) for r in rows]
 
+    @property
+    def lastrowid(self):
+        return self._cur.lastrowid
+
     def close(self):
         self._cur.close()
 

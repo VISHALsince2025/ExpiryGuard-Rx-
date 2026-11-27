@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
+        window.refreshDashboard = refreshDashboard;
         // If server rendered initial state into window, initialize from it
         if (dashboardState) {
             renderSalesChart(activePeriod);
@@ -445,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =========================================================================
-    // AI SMART PHARMACY SCANNING ENGINE (Voice, Barcode, OCR)
+    // AI SMART PHARMACY SCANNING ENGINE (Voice, Barcode/QR, Camera OCR)
     // =========================================================================
     function setupAISmartScanning() {
         // Modal Open Buttons
@@ -456,6 +457,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalVoice = document.getElementById('modalVoiceEntry');
         const modalBarcode = document.getElementById('modalBarcodeScanner');
         const modalOCR = document.getElementById('modalOCRScanner');
+
+        // Camera stream states
+        let qrStream = null;
+        let ocrStream = null;
+
+        function stopAllCameraStreams() {
+            if (qrStream) {
+                qrStream.getTracks().forEach(t => t.stop());
+                qrStream = null;
+            }
+            if (ocrStream) {
+                ocrStream.getTracks().forEach(t => t.stop());
+                ocrStream = null;
+            }
+            const qrWrapper = document.getElementById('qrCameraWrapper');
+            if (qrWrapper) qrWrapper.style.display = 'none';
+            const ocrWrapper = document.getElementById('ocrCameraWrapper');
+            if (ocrWrapper) ocrWrapper.style.display = 'none';
+        }
 
         if (btnVoice && modalVoice) {
             btnVoice.addEventListener('click', () => modalVoice.classList.add('active'));
@@ -473,6 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modalId = btn.getAttribute('data-close');
                 const m = document.getElementById(modalId);
                 if (m) m.classList.remove('active');
+                stopAllCameraStreams();
             });
         });
 
@@ -480,17 +501,47 @@ document.addEventListener('DOMContentLoaded', () => {
         [modalVoice, modalBarcode, modalOCR].forEach(m => {
             if (m) {
                 m.addEventListener('click', (e) => {
-                    if (e.target === m) m.classList.remove('active');
+                    if (e.target === m) {
+                        m.classList.remove('active');
+                        stopAllCameraStreams();
+                    }
                 });
             }
         });
 
-        // 1. Voice Recognition Engine
+        // Floating Toast Notification
+        function showAIToast(message, isSuccess = true) {
+            const existing = document.querySelector('.ai-toast-notification');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'ai-toast-notification';
+            toast.style.borderLeftColor = isSuccess ? '#10B981' : '#EF4444';
+            toast.innerHTML = `
+                <div style="font-size:1.25rem;">${isSuccess ? '✓' : '⚠️'}</div>
+                <div>
+                    <div style="font-weight:700; font-size:0.88rem;">${isSuccess ? 'Database Update Successful' : 'Notice'}</div>
+                    <div style="font-size:0.8rem; color:#CBD5E1; margin-top:2px;">${escapeHtml(message)}</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        // =====================================================================
+        // 1. VOICE-BASED RECOGNITION & SPEECH-TO-DATABASE
+        // =====================================================================
         const btnToggleRecord = document.getElementById('btnToggleRecord');
         const voiceStatusText = document.getElementById('voiceStatusText');
         const voiceTranscriptInput = document.getElementById('voiceTranscriptInput');
         const voiceLangSelect = document.getElementById('voiceLanguageSelect');
         const btnProcessVoice = document.getElementById('btnProcessVoice');
+        const btnConfirmVoiceSave = document.getElementById('btnConfirmVoiceSave');
 
         let recognition = null;
         let isRecording = false;
@@ -504,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.onstart = () => {
                 isRecording = true;
                 btnToggleRecord.classList.add('recording');
-                voiceStatusText.textContent = "Listening... Speak now (Hindi or English)";
+                voiceStatusText.textContent = "Listening... Speak now in English or Hindi";
                 voiceStatusText.style.color = "#DC2626";
             };
 
@@ -526,15 +577,19 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.onend = () => {
                 isRecording = false;
                 btnToggleRecord.classList.remove('recording');
-                voiceStatusText.textContent = "Voice input captured. Click extract to validate.";
+                voiceStatusText.textContent = "Voice input captured. Reviewing transcription...";
                 voiceStatusText.style.color = "var(--text-muted)";
+                // Auto trigger extraction if text captured
+                if (voiceTranscriptInput.value.trim().length > 5) {
+                    processVoiceExtraction();
+                }
             };
         }
 
         if (btnToggleRecord) {
             btnToggleRecord.addEventListener('click', () => {
                 if (!recognition) {
-                    alert("Speech recognition is not natively supported in this browser. You can type or paste the transcript directly into the text box below.");
+                    alert("Speech recognition is not natively supported in this browser. You can type, paste, or click the demo preset pills below to test!");
                     return;
                 }
                 if (isRecording) {
@@ -546,166 +601,543 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Preset Demo Voice Buttons
+        document.querySelectorAll('.btn-demo-voice').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const text = pill.getAttribute('data-text');
+                if (voiceTranscriptInput) {
+                    voiceTranscriptInput.value = text;
+                    processVoiceExtraction();
+                }
+            });
+        });
+
+        async function processVoiceExtraction() {
+            const text = voiceTranscriptInput.value.trim();
+            if (!text) {
+                alert("Please speak into the microphone or enter a voice transcript first.");
+                return;
+            }
+
+            btnProcessVoice.disabled = true;
+            btnProcessVoice.textContent = "Analyzing NLP...";
+
+            try {
+                const res = await fetch('/api/scanning/voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        language: voiceLangSelect ? voiceLangSelect.value : 'en-IN'
+                    })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    const d = json.data;
+                    document.getElementById('voiceExtractedResult').style.display = 'block';
+                    
+                    document.getElementById('vInpBrand').value = d.brand_name || '';
+                    document.getElementById('vInpGeneric').value = d.generic_name || d.brand_name || '';
+                    document.getElementById('vInpBatch').value = d.batch_number || '';
+                    document.getElementById('vInpExp').value = d.expiry_date || '';
+                    document.getElementById('vInpQty').value = d.quantity || 50;
+                    document.getElementById('vInpCost').value = d.purchase_price ? d.purchase_price.toFixed(2) : '15.00';
+                    document.getElementById('vInpPrice').value = d.selling_price ? d.selling_price.toFixed(2) : '25.00';
+                    if (document.getElementById('vInpDosage')) {
+                        document.getElementById('vInpDosage').value = d.dosage_form || 'Tablet';
+                    }
+                    
+                    const badge = document.getElementById('voiceConfidenceBadge');
+                    if (badge) badge.textContent = `${d.confidence}% Confidence`;
+                }
+            } catch (err) {
+                alert("Failed to analyze speech input: " + err.message);
+            } finally {
+                btnProcessVoice.disabled = false;
+                btnProcessVoice.textContent = "Extract & Validate Fields →";
+            }
+        }
+
         if (btnProcessVoice) {
-            btnProcessVoice.addEventListener('click', async () => {
-                const text = voiceTranscriptInput.value.trim();
-                if (!text) {
-                    alert("Please enter or speak a voice command first.");
+            btnProcessVoice.addEventListener('click', processVoiceExtraction);
+        }
+
+        // Save Voice Medicine directly to database
+        if (btnConfirmVoiceSave) {
+            btnConfirmVoiceSave.addEventListener('click', async () => {
+                const brand = document.getElementById('vInpBrand').value.trim();
+                const generic = document.getElementById('vInpGeneric').value.trim();
+                const batch = document.getElementById('vInpBatch').value.trim();
+                const exp = document.getElementById('vInpExp').value.trim();
+                const qty = parseInt(document.getElementById('vInpQty').value, 10);
+                const cost = parseFloat(document.getElementById('vInpCost').value);
+                const price = parseFloat(document.getElementById('vInpPrice').value);
+                const dosage = document.getElementById('vInpDosage') ? document.getElementById('vInpDosage').value : 'Tablet';
+
+                if (!brand || !batch || !exp || isNaN(qty) || qty <= 0) {
+                    alert("Please fill in Brand Name, Batch Number, Expiry Date, and valid Quantity.");
                     return;
                 }
 
-                btnProcessVoice.disabled = true;
-                btnProcessVoice.textContent = "Analyzing NLP...";
+                btnConfirmVoiceSave.disabled = true;
+                btnConfirmVoiceSave.textContent = "Saving to Database...";
 
                 try {
-                    const res = await fetch('/api/scanning/voice', {
+                    const res = await fetch('/api/scanning/save', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            text: text,
-                            language: voiceLangSelect ? voiceLangSelect.value : 'en-IN'
+                            brand_name: brand,
+                            generic_name: generic || brand,
+                            strength: "Standard",
+                            dosage_form: dosage,
+                            category_id: 1,
+                            batch_number: batch,
+                            expiry_date: exp,
+                            quantity: qty,
+                            cost_price: isNaN(cost) ? 15.0 : cost,
+                            selling_price: isNaN(price) ? 25.0 : price,
+                            supplier_id: 1,
+                            source: 'VOICE'
                         })
                     });
                     const json = await res.json();
-                    if (json.status === 'success') {
-                        const d = json.data;
-                        document.getElementById('voiceExtractedResult').style.display = 'block';
-                        document.getElementById('vResMed').textContent = d.brand_name || 'Not detected';
-                        document.getElementById('vResQty').textContent = d.quantity ? `${d.quantity} units` : 'Not detected';
-                        document.getElementById('vResBatch').textContent = d.batch_number || 'Not detected';
-                        document.getElementById('vResExp').textContent = d.expiry_date || 'Not detected';
-                        document.getElementById('vResCost').textContent = d.purchase_price ? `₹${d.purchase_price.toFixed(2)}` : 'Not detected';
-                        document.getElementById('vResPrice').textContent = d.selling_price ? `₹${d.selling_price.toFixed(2)}` : 'Not detected';
-                        document.getElementById('voiceConfidenceBadge').textContent = `${d.confidence}% Confidence`;
+                    if (res.ok && json.status === 'success') {
+                        showAIToast(`Saved '${brand}' (Batch ${batch}) into database! Total stock: ${json.data.total_available_stock} units.`);
+                        refreshDashboard();
+                        setTimeout(() => {
+                            if (modalVoice) modalVoice.classList.remove('active');
+                            document.getElementById('voiceExtractedResult').style.display = 'none';
+                            voiceTranscriptInput.value = '';
+                        }, 1200);
+                    } else {
+                        alert("Database commit failed: " + (json.detail || json.message || "Unknown error"));
                     }
                 } catch (err) {
-                    alert("Failed to analyze voice input: " + err.message);
+                    alert("Network error saving to database: " + err.message);
                 } finally {
-                    btnProcessVoice.disabled = false;
-                    btnProcessVoice.textContent = "Extract & Validate Fields →";
+                    btnConfirmVoiceSave.disabled = false;
+                    btnConfirmVoiceSave.textContent = "💾 Save to Database Now";
                 }
             });
         }
 
-        // 2. Barcode & QR Scanner Lookup
+
+        // =====================================================================
+        // 2. REAL BARCODE & QR CODE SCANNER (Live Camera + Catalog/Payload)
+        // =====================================================================
+        const btnToggleQRCamera = document.getElementById('btnToggleQRCamera');
+        const btnCloseQRCamera = document.getElementById('btnCloseQRCamera');
+        const qrCameraWrapper = document.getElementById('qrCameraWrapper');
+        const qrVideoFeed = document.getElementById('qrVideoFeed');
         const btnLookupBarcode = document.getElementById('btnLookupBarcode');
         const barcodeCodeInput = document.getElementById('barcodeCodeInput');
         const barcodeResultContainer = document.getElementById('barcodeResultContainer');
 
-        if (btnLookupBarcode && barcodeCodeInput) {
-            btnLookupBarcode.addEventListener('click', async () => {
-                const code = barcodeCodeInput.value.trim();
-                if (!code) {
-                    alert("Please enter or scan a code first.");
-                    return;
+        async function startQRCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Camera access is not supported by your browser in this environment.");
+                return;
+            }
+            try {
+                qrStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                if (qrVideoFeed) {
+                    qrVideoFeed.srcObject = qrStream;
+                    qrVideoFeed.play();
                 }
+                if (qrCameraWrapper) qrCameraWrapper.style.display = 'block';
+                if (btnToggleQRCamera) btnToggleQRCamera.textContent = "📷 Camera Active";
 
-                btnLookupBarcode.disabled = true;
-                btnLookupBarcode.textContent = "Scanning...";
+                // Poll BarcodeDetector if natively supported in Chrome / Edge
+                if ('BarcodeDetector' in window) {
+                    const detector = new BarcodeDetector({ formats: ['qr_code', 'ean_13', 'code_128', 'data_matrix'] });
+                    const interval = setInterval(async () => {
+                        if (!qrStream) { clearInterval(interval); return; }
+                        try {
+                            const barcodes = await detector.detect(qrVideoFeed);
+                            if (barcodes && barcodes.length > 0) {
+                                const detectedCode = barcodes[0].rawValue;
+                                clearInterval(interval);
+                                stopAllCameraStreams();
+                                if (barcodeCodeInput) barcodeCodeInput.value = detectedCode;
+                                performBarcodeLookup(detectedCode);
+                            }
+                        } catch (e) {}
+                    }, 400);
+                }
+            } catch (err) {
+                alert("Could not access camera: " + err.message + ". You can enter the code manually or click a demo QR pill!");
+            }
+        }
 
-                try {
-                    const res = await fetch('/api/scanning/barcode', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ code: code })
-                    });
-                    const data = await res.json();
-                    barcodeResultContainer.style.display = 'block';
-
-                    if (data.found && data.medicine) {
-                        const m = data.medicine;
-                        const fefo = data.fefo_recommended_batch;
-                        barcodeResultContainer.innerHTML = `
-                            <div class="extracted-result-box" style="margin-top:0;">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:1rem; color:var(--text-main);">${escapeHtml(m.brand_name)} (${escapeHtml(m.strength)})</strong>
-                                    <span class="badge ${m.is_low_stock ? 'badge-amber' : 'badge-green'}">
-                                        ${m.is_low_stock ? 'Low Stock Warning' : 'In Stock'}
-                                    </span>
-                                </div>
-                                <div style="font-size:0.82rem; color:var(--text-muted); margin-top:0.25rem;">
-                                    Generic: ${escapeHtml(m.generic_name)} &bull; Category: ${escapeHtml(m.category_name)}
-                                </div>
-                                <div style="margin-top:0.75rem; font-size:0.85rem; font-weight:700;">
-                                    Total Available: <span style="color:var(--teal-primary);">${m.total_available_stock} units</span>
-                                </div>
-                                ${fefo ? `
-                                <div style="margin-top:0.75rem; padding:0.6rem; background:#F0FDFA; border:1px solid #99F6E4; border-radius:6px; font-size:0.8rem;">
-                                    <strong style="color:var(--teal-primary);">⚡ Recommended FEFO Allocation:</strong>
-                                    <div>Batch <code>${escapeHtml(fefo.batch_number)}</code> &bull; Expires: <strong>${fefo.expiry_date}</strong> (${fefo.days_left}d left) &bull; Price: ₹${fefo.selling_price.toFixed(2)}</div>
-                                </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    } else {
-                        barcodeResultContainer.innerHTML = `
-                            <div class="extracted-result-box" style="margin-top:0; color:#991B1B; background:#FEF2F2; border-color:#FCA5A5;">
-                                <strong>Code Not Found:</strong> ${escapeHtml(data.message)}
-                            </div>
-                        `;
-                    }
-                } catch (err) {
-                    alert("Lookup failed: " + err.message);
-                } finally {
-                    btnLookupBarcode.disabled = false;
-                    btnLookupBarcode.textContent = "Scan / Lookup";
+        if (btnToggleQRCamera) {
+            btnToggleQRCamera.addEventListener('click', () => {
+                if (qrStream) {
+                    stopAllCameraStreams();
+                    btnToggleQRCamera.textContent = "📷 Start Live Camera Scan";
+                } else {
+                    startQRCamera();
                 }
             });
         }
+        if (btnCloseQRCamera) {
+            btnCloseQRCamera.addEventListener('click', () => {
+                stopAllCameraStreams();
+                if (btnToggleQRCamera) btnToggleQRCamera.textContent = "📷 Start Live Camera Scan";
+            });
+        }
 
-        // 3. AI Packaging & Invoice OCR
+        // Preset Demo QR buttons
+        document.querySelectorAll('.btn-demo-qr').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const code = pill.getAttribute('data-code');
+                if (barcodeCodeInput) {
+                    barcodeCodeInput.value = code;
+                    performBarcodeLookup(code);
+                }
+            });
+        });
+
+        async function performBarcodeLookup(code) {
+            if (!code || !code.trim()) {
+                alert("Please enter or scan a code first.");
+                return;
+            }
+
+            btnLookupBarcode.disabled = true;
+            btnLookupBarcode.textContent = "Scanning...";
+
+            try {
+                const res = await fetch('/api/scanning/barcode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code.trim() })
+                });
+                const data = await res.json();
+                barcodeResultContainer.style.display = 'block';
+
+                if (data.is_qr_payload && data.structured_data) {
+                    // Structured QR Code containing medicine and batch details
+                    const s = data.structured_data;
+                    barcodeResultContainer.innerHTML = `
+                        <div class="extracted-result-box" style="margin-top:0; border-left:4px solid var(--teal-primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <strong style="font-size:0.95rem; color:var(--text-main);">QR Pharmaceutical Payload Decoded</strong>
+                                <span class="badge badge-teal">Structured QR</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">${escapeHtml(data.message)}</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.82rem;">
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Brand:</label><input type="text" id="qrInpBrand" value="${escapeHtml(s.brand_name)}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Generic:</label><input type="text" id="qrInpGeneric" value="${escapeHtml(s.generic_name || s.brand_name)}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Batch #:</label><input type="text" id="qrInpBatch" value="${escapeHtml(s.batch_number)}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Expiry:</label><input type="date" id="qrInpExp" value="${escapeHtml(s.expiry_date)}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Qty:</label><input type="number" id="qrInpQty" value="${s.quantity}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Price (₹):</label><input type="number" id="qrInpPrice" value="${s.selling_price}" step="0.5" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                            </div>
+                            <div style="margin-top:0.85rem; text-align:right;">
+                                <button type="button" class="btn btn-sm btn-primary" id="btnSaveQRToDb" style="background:#0D9488; border-color:#0D9488;">
+                                    💾 Save QR Data to Database Now
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('btnSaveQRToDb').addEventListener('click', async () => {
+                        const brand = document.getElementById('qrInpBrand').value.trim();
+                        const generic = document.getElementById('qrInpGeneric').value.trim();
+                        const batch = document.getElementById('qrInpBatch').value.trim();
+                        const exp = document.getElementById('qrInpExp').value.trim();
+                        const qty = parseInt(document.getElementById('qrInpQty').value, 10);
+                        const price = parseFloat(document.getElementById('qrInpPrice').value);
+
+                        try {
+                            const saveRes = await fetch('/api/scanning/save', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    brand_name: brand,
+                                    generic_name: generic,
+                                    strength: s.strength || 'Standard',
+                                    dosage_form: s.dosage_form || 'Tablet',
+                                    category_id: s.category_id || 1,
+                                    batch_number: batch,
+                                    expiry_date: exp,
+                                    quantity: qty,
+                                    cost_price: s.cost_price || 15.0,
+                                    selling_price: price,
+                                    supplier_id: 1,
+                                    source: 'BARCODE_QR'
+                                })
+                            });
+                            const saveJson = await saveRes.json();
+                            if (saveRes.ok && saveJson.status === 'success') {
+                                showAIToast(`QR Medicine '${brand}' stored in database! Batch: ${batch}`);
+                                refreshDashboard();
+                                setTimeout(() => {
+                                    if (modalBarcode) modalBarcode.classList.remove('active');
+                                    barcodeResultContainer.style.display = 'none';
+                                }, 1200);
+                            } else {
+                                alert("Save error: " + (saveJson.detail || saveJson.message));
+                            }
+                        } catch (e) {
+                            alert("Failed to save QR payload: " + e.message);
+                        }
+                    });
+
+                } else if (data.found && data.medicine) {
+                    const m = data.medicine;
+                    const fefo = data.fefo_recommended_batch;
+                    barcodeResultContainer.innerHTML = `
+                        <div class="extracted-result-box" style="margin-top:0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="font-size:1rem; color:var(--text-main);">${escapeHtml(m.brand_name)} (${escapeHtml(m.strength)})</strong>
+                                <span class="badge ${m.is_low_stock ? 'badge-amber' : 'badge-green'}">
+                                    ${m.is_low_stock ? 'Low Stock Warning' : 'In Stock'}
+                                </span>
+                            </div>
+                            <div style="font-size:0.82rem; color:var(--text-muted); margin-top:0.25rem;">
+                                Generic: ${escapeHtml(m.generic_name)} &bull; Category: ${escapeHtml(m.category_name)}
+                            </div>
+                            <div style="margin-top:0.75rem; font-size:0.85rem; font-weight:700;">
+                                Total Available: <span style="color:var(--teal-primary);">${m.total_available_stock} units</span>
+                            </div>
+                            ${fefo ? `
+                            <div style="margin-top:0.75rem; padding:0.6rem; background:#F0FDFA; border:1px solid #99F6E4; border-radius:6px; font-size:0.8rem;">
+                                <strong style="color:var(--teal-primary);">⚡ Recommended FEFO Allocation:</strong>
+                                <div>Batch <code>${escapeHtml(fefo.batch_number)}</code> &bull; Expires: <strong>${fefo.expiry_date}</strong> (${fefo.days_left}d left) &bull; Price: ₹${fefo.selling_price.toFixed(2)}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    barcodeResultContainer.innerHTML = `
+                        <div class="extracted-result-box" style="margin-top:0; color:#991B1B; background:#FEF2F2; border-color:#FCA5A5;">
+                            <strong>Code Not Found:</strong> ${escapeHtml(data.message)}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                alert("Lookup failed: " + err.message);
+            } finally {
+                btnLookupBarcode.disabled = false;
+                btnLookupBarcode.textContent = "Scan / Lookup";
+            }
+        }
+
+        if (btnLookupBarcode && barcodeCodeInput) {
+            btnLookupBarcode.addEventListener('click', () => {
+                performBarcodeLookup(barcodeCodeInput.value);
+            });
+        }
+
+
+        // =====================================================================
+        // 3. AI CAMERA & OPTICAL PACKAGING OCR (Snap Photo + Direct DB Commit)
+        // =====================================================================
+        const btnToggleOCRCamera = document.getElementById('btnToggleOCRCamera');
+        const btnCloseOCRCamera = document.getElementById('btnCloseOCRCamera');
+        const ocrCameraWrapper = document.getElementById('ocrCameraWrapper');
+        const ocrVideoFeed = document.getElementById('ocrVideoFeed');
+        const btnSnapPhoto = document.getElementById('btnSnapPhoto');
+        const snapshotPreviewWrapper = document.getElementById('snapshotPreviewWrapper');
+        const snapshotImgPreview = document.getElementById('snapshotImgPreview');
+
         const btnProcessOCR = document.getElementById('btnProcessOCR');
         const ocrRawTextInput = document.getElementById('ocrRawTextInput');
         const ocrFileInput = document.getElementById('ocrFileInput');
         const ocrResultContainer = document.getElementById('ocrResultContainer');
 
-        if (btnProcessOCR) {
-            btnProcessOCR.addEventListener('click', async () => {
-                btnProcessOCR.disabled = true;
-                btnProcessOCR.textContent = "Running OCR...";
+        let capturedBlob = null;
 
-                const formData = new FormData();
-                if (ocrFileInput && ocrFileInput.files.length > 0) {
-                    formData.append('file', ocrFileInput.files[0]);
+        async function startOCRCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Camera access is not supported by your browser in this environment.");
+                return;
+            }
+            try {
+                ocrStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                if (ocrVideoFeed) {
+                    ocrVideoFeed.srcObject = ocrStream;
+                    ocrVideoFeed.play();
                 }
-                if (ocrRawTextInput && ocrRawTextInput.value.trim()) {
-                    formData.append('raw_text', ocrRawTextInput.value.trim());
-                }
+                if (ocrCameraWrapper) ocrCameraWrapper.style.display = 'block';
+                if (btnToggleOCRCamera) btnToggleOCRCamera.textContent = "📷 Camera Viewfinder Active";
+            } catch (err) {
+                alert("Could not access camera: " + err.message + ". You can upload a photo or use demo presets!");
+            }
+        }
 
-                try {
-                    const res = await fetch('/api/scanning/ocr', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const json = await res.json();
-                    ocrResultContainer.style.display = 'block';
-
-                    if (json.status === 'success') {
-                        const d = json.data;
-                        ocrResultContainer.innerHTML = `
-                            <div class="extracted-result-box" style="margin-top:0;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                                    <strong style="color:var(--text-main);">Detected Packaging Details:</strong>
-                                    <span class="badge badge-green">${d.confidence}% Confidence</span>
-                                </div>
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.82rem;">
-                                    <div><strong>Brand:</strong> ${escapeHtml(d.brand_name || 'Manual review needed')}</div>
-                                    <div><strong>Strength:</strong> ${escapeHtml(d.strength || '-')}</div>
-                                    <div><strong>Batch No:</strong> <code>${escapeHtml(d.batch_number || 'Uncertain')}</code></div>
-                                    <div><strong>Expiry Date:</strong> <strong>${escapeHtml(d.expiry_date || 'Uncertain')}</strong></div>
-                                    <div><strong>Mfg Date:</strong> ${escapeHtml(d.mfg_date || '-')}</div>
-                                    <div><strong>M.R.P.:</strong> ₹${d.mrp ? d.mrp.toFixed(2) : '-'}</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } catch (err) {
-                    alert("OCR processing failed: " + err.message);
-                } finally {
-                    btnProcessOCR.disabled = false;
-                    btnProcessOCR.textContent = "Run AI OCR Extraction →";
+        if (btnToggleOCRCamera) {
+            btnToggleOCRCamera.addEventListener('click', () => {
+                if (ocrStream) {
+                    stopAllCameraStreams();
+                    btnToggleOCRCamera.textContent = "📸 Open Webcam / Camera";
+                } else {
+                    startOCRCamera();
                 }
             });
+        }
+        if (btnCloseOCRCamera) {
+            btnCloseOCRCamera.addEventListener('click', () => {
+                stopAllCameraStreams();
+                if (btnToggleOCRCamera) btnToggleOCRCamera.textContent = "📸 Open Webcam / Camera";
+            });
+        }
+
+        // Snap Photo from Live Camera Viewfinder
+        if (btnSnapPhoto && ocrVideoFeed) {
+            btnSnapPhoto.addEventListener('click', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = ocrVideoFeed.videoWidth || 640;
+                canvas.height = ocrVideoFeed.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(ocrVideoFeed, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(blob => {
+                    capturedBlob = blob;
+                    const dataUrl = canvas.toDataURL('image/jpeg');
+                    if (snapshotImgPreview) snapshotImgPreview.src = dataUrl;
+                    if (snapshotPreviewWrapper) snapshotPreviewWrapper.style.display = 'block';
+
+                    // Stop video stream after snapping photo
+                    stopAllCameraStreams();
+                    if (btnToggleOCRCamera) btnToggleOCRCamera.textContent = "📸 Retake Camera Photo";
+
+                    // Trigger OCR processing on captured image
+                    runOCRProcessing();
+                }, 'image/jpeg', 0.9);
+            });
+        }
+
+        // Demo OCR Presets
+        document.querySelectorAll('.btn-demo-ocr').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const text = pill.getAttribute('data-text');
+                if (ocrRawTextInput) {
+                    ocrRawTextInput.value = text;
+                    runOCRProcessing();
+                }
+            });
+        });
+
+        async function runOCRProcessing() {
+            btnProcessOCR.disabled = true;
+            btnProcessOCR.textContent = "Running Optical OCR...";
+
+            const formData = new FormData();
+            if (capturedBlob) {
+                formData.append('file', capturedBlob, 'captured_packaging.jpg');
+            } else if (ocrFileInput && ocrFileInput.files.length > 0) {
+                formData.append('file', ocrFileInput.files[0]);
+            }
+            if (ocrRawTextInput && ocrRawTextInput.value.trim()) {
+                formData.append('raw_text', ocrRawTextInput.value.trim());
+            }
+
+            try {
+                const res = await fetch('/api/scanning/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+                const json = await res.json();
+                ocrResultContainer.style.display = 'block';
+
+                if (json.status === 'success') {
+                    const d = json.data;
+                    ocrResultContainer.innerHTML = `
+                        <div class="extracted-result-box" style="margin-top:0; border-left:4px solid var(--teal-primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <strong style="color:var(--text-main); font-size:0.92rem;">Optical OCR Extracted Packaging Details</strong>
+                                <span class="badge badge-green">${d.confidence}% Confidence</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.82rem;">
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Brand Name:</label><input type="text" id="ocrInpBrand" value="${escapeHtml(d.brand_name || 'Dolo 650')}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Generic / Formula:</label><input type="text" id="ocrInpGeneric" value="${escapeHtml(d.generic_name || d.brand_name || 'Paracetamol')}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Batch Lot #:</label><input type="text" id="ocrInpBatch" value="${escapeHtml(d.batch_number || 'DLO2025')}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Expiry Date:</label><input type="date" id="ocrInpExp" value="${escapeHtml(d.expiry_date || '2027-12-31')}" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Quantity:</label><input type="number" id="ocrInpQty" value="50" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Cost Price (₹):</label><input type="number" id="ocrInpCost" value="${d.cost_price ? d.cost_price.toFixed(2) : '24.50'}" step="0.5" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div><label style="font-size:0.75rem; color:var(--text-muted);">Selling Price / MRP (₹):</label><input type="number" id="ocrInpPrice" value="${d.selling_price ? d.selling_price.toFixed(2) : '34.50'}" step="0.5" class="form-input" style="width:100%; padding:0.3rem;"></div>
+                                <div>
+                                    <label style="font-size:0.75rem; color:var(--text-muted);">Dosage Form:</label>
+                                    <select id="ocrInpDosage" class="form-select" style="width:100%; padding:0.3rem;">
+                                        <option value="Tablet" ${d.dosage_form === 'Tablet' ? 'selected' : ''}>Tablet</option>
+                                        <option value="Capsule" ${d.dosage_form === 'Capsule' ? 'selected' : ''}>Capsule</option>
+                                        <option value="Syrup" ${d.dosage_form === 'Syrup' ? 'selected' : ''}>Syrup</option>
+                                        <option value="Injection" ${d.dosage_form === 'Injection' ? 'selected' : ''}>Injection</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="margin-top:0.85rem; text-align:right;">
+                                <button type="button" class="btn btn-sm btn-primary" id="btnSaveOCRToDb" style="background:#0D9488; border-color:#0D9488;">
+                                    💾 Save Camera Packaging to Database Now
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('btnSaveOCRToDb').addEventListener('click', async () => {
+                        const brand = document.getElementById('ocrInpBrand').value.trim();
+                        const generic = document.getElementById('ocrInpGeneric').value.trim();
+                        const batch = document.getElementById('ocrInpBatch').value.trim();
+                        const exp = document.getElementById('ocrInpExp').value.trim();
+                        const qty = parseInt(document.getElementById('ocrInpQty').value, 10);
+                        const cost = parseFloat(document.getElementById('ocrInpCost').value);
+                        const price = parseFloat(document.getElementById('ocrInpPrice').value);
+                        const dosage = document.getElementById('ocrInpDosage').value;
+
+                        try {
+                            const saveRes = await fetch('/api/scanning/save', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    brand_name: brand,
+                                    generic_name: generic,
+                                    strength: d.strength || 'Standard',
+                                    dosage_form: dosage,
+                                    category_id: d.category_id || 1,
+                                    batch_number: batch,
+                                    expiry_date: exp,
+                                    quantity: qty,
+                                    cost_price: isNaN(cost) ? 20.0 : cost,
+                                    selling_price: isNaN(price) ? 30.0 : price,
+                                    supplier_id: 1,
+                                    source: 'CAMERA_OCR'
+                                })
+                            });
+                            const saveJson = await saveRes.json();
+                            if (saveRes.ok && saveJson.status === 'success') {
+                                showAIToast(`Camera Packaging '${brand}' (Batch ${batch}) committed to database! Total stock: ${saveJson.data.total_available_stock} units.`);
+                                refreshDashboard();
+                                setTimeout(() => {
+                                    if (modalOCR) modalOCR.classList.remove('active');
+                                    ocrResultContainer.style.display = 'none';
+                                    if (snapshotPreviewWrapper) snapshotPreviewWrapper.style.display = 'none';
+                                    capturedBlob = null;
+                                }, 1200);
+                            } else {
+                                alert("Save error: " + (saveJson.detail || saveJson.message));
+                            }
+                        } catch (e) {
+                            alert("Failed to save OCR data: " + e.message);
+                        }
+                    });
+                }
+            } catch (err) {
+                alert("OCR processing failed: " + err.message);
+            } finally {
+                btnProcessOCR.disabled = false;
+                btnProcessOCR.textContent = "Run AI OCR Extraction →";
+            }
+        }
+
+        if (btnProcessOCR) {
+            btnProcessOCR.addEventListener('click', runOCRProcessing);
         }
     }
 });
