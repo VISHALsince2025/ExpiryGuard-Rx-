@@ -47,6 +47,20 @@ async def security_headers(request: Request, call_next):
 for r in (auth, users, medicines, suppliers, grn, sales, returns, alerts, reports, audit_view, pages, scanning, clinical):
     app.include_router(r.router)
 
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+def root_index(request: Request):
+    from app.routers.pages import index
+    return index(request)
+
+@app.get("/api/index", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
+def vercel_entry_index(request: Request):
+    from app.routers.pages import index
+    return index(request)
+
 @app.get("/health", tags=["Health"])
 def health():
     return {"status": "ok"}
