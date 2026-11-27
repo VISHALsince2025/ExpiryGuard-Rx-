@@ -54,13 +54,6 @@ def root_index(request: Request):
     from app.routers.pages import index
     return index(request)
 
-@app.get("/api/index", response_class=HTMLResponse)
-@app.get("/api/index.py", response_class=HTMLResponse)
-@app.get("/api", response_class=HTMLResponse)
-def vercel_entry_index(request: Request):
-    from app.routers.pages import index
-    return index(request)
-
 @app.get("/health", tags=["Health"])
 def health():
     return {"status": "ok"}
